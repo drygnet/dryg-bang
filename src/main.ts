@@ -12,6 +12,31 @@ interface CustomBang {
 // Storage keys
 const LS_KEY_DEFAULT_BANG = "dryg-default-bang";
 const LS_KEY_CUSTOM_BANGS = "dryg-custom-bangs";
+const LS_KEY_THEME = "dryg-theme";
+
+// Theme helpers
+type Theme = "system" | "dark";
+
+function getTheme(): Theme {
+  const stored = localStorage.getItem(LS_KEY_THEME);
+  return stored === "dark" ? "dark" : "system";
+}
+
+function setTheme(theme: Theme): void {
+  localStorage.setItem(LS_KEY_THEME, theme);
+  applyTheme(theme);
+}
+
+function applyTheme(theme: Theme): void {
+  if (theme === "dark") {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+}
+
+// Apply theme on load
+applyTheme(getTheme());
 
 // Storage helpers
 function getDefaultBangTrigger(): string {
@@ -63,56 +88,51 @@ function getBuiltInBangConflict(trigger: string): typeof bangs[number] | undefin
 function noSearchDefaultPageRender() {
   const app = document.querySelector<HTMLDivElement>("#app")!;
   app.innerHTML = `
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
-      <div class="content-container">
-        <h1>Dryg Search</h1>
-        <p class="tagline">A fork of <a href="https://unduck.link" target="_blank">unduck.link</a> with custom bangs.</p>
-        <p>Fast client-side bang redirects. Add the URL below as a custom search engine in your browser to enable <a href="https://duckduckgo.com/bang.html" target="_blank">all of DuckDuckGo's bangs</a>.</p>
-        <div class="url-container"> 
+    <div class="landing-container">
+      <main class="landing-main">
+        <div class="search-container">
           <input 
             type="text" 
-            class="url-input"
-            value="https://search.dryg.net?q=%s"
-            readonly 
+            class="search-input"
+            placeholder="Search or type a !bang..."
+            autofocus
           />
-          <button class="copy-button">
-            <img src="/clipboard.svg" alt="Copy" />
-          </button>
         </div>
-        <p class="feature-text">💡 Add custom bangs for enterprise apps, internal tools, or self-hosted services in <a href="#" id="open-settings">settings</a>.</p>
-      </div>
+      </main>
       <footer class="footer">
         <a href="https://github.com/drygnet/dryg-bang" target="_blank">github</a>
         <span class="footer-separator">·</span>
         <a href="#" id="open-settings-footer">settings</a>
+        <span class="footer-separator">·</span>
+        <a href="#" id="open-about-footer">about</a>
       </footer>
     </div>
   `;
 
-  const copyButton = app.querySelector<HTMLButtonElement>(".copy-button")!;
-  const copyIcon = copyButton.querySelector("img")!;
-  const urlInput = app.querySelector<HTMLInputElement>(".url-input")!;
-
-  copyButton.addEventListener("click", async () => {
-    await navigator.clipboard.writeText(urlInput.value);
-    copyIcon.src = "/clipboard-check.svg";
-
-    setTimeout(() => {
-      copyIcon.src = "/clipboard.svg";
-    }, 2000);
-  });
-
-  // Settings links
-  const settingsLink = app.querySelector<HTMLAnchorElement>("#open-settings")!;
+  // Settings link
   const settingsFooterLink = app.querySelector<HTMLAnchorElement>("#open-settings-footer")!;
-  
-  const handleSettingsClick = (e: Event) => {
+  settingsFooterLink.addEventListener("click", (e: Event) => {
     e.preventDefault();
     openSettingsModal();
-  };
-  
-  settingsLink.addEventListener("click", handleSettingsClick);
-  settingsFooterLink.addEventListener("click", handleSettingsClick);
+  });
+
+  // About link
+  const aboutFooterLink = app.querySelector<HTMLAnchorElement>("#open-about-footer")!;
+  aboutFooterLink.addEventListener("click", (e: Event) => {
+    e.preventDefault();
+    openAboutModal();
+  });
+
+  // Search input - navigate to ?q= on Enter
+  const searchInput = app.querySelector<HTMLInputElement>(".search-input")!;
+  searchInput.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key === "Enter") {
+      const query = searchInput.value.trim();
+      if (query) {
+        window.location.href = `?q=${encodeURIComponent(query)}`;
+      }
+    }
+  });
 }
 
 // Popular search engines for the default bang dropdown
@@ -125,6 +145,72 @@ const popularBangs = [
   { t: "ka", s: "Kagi" },
 ];
 
+function openAboutModal() {
+  // Remove existing modal if any
+  const existingModal = document.querySelector(".modal-backdrop");
+  if (existingModal) existingModal.remove();
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <h2>About</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-content">
+        <div class="about-content">
+          <p class="tagline">A fork of <a href="https://unduck.link" target="_blank">unduck.link</a> with custom bangs.</p>
+          <p>Fast client-side bang redirects. Add the URL below as a custom search engine in your browser to enable <a href="https://duckduckgo.com/bang.html" target="_blank">all of DuckDuckGo's bangs</a>.</p>
+          <div class="url-container"> 
+            <input 
+              type="text" 
+              class="url-input"
+              value="https://search.dryg.net?q=%s"
+              readonly 
+            />
+            <button class="copy-button">
+              <img src="/clipboard.svg" alt="Copy" />
+            </button>
+          </div>
+          <p class="feature-text">💡 Add custom bangs for enterprise apps, internal tools, or self-hosted services in <a href="#" id="open-settings-from-about">settings</a>.</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(backdrop);
+
+  // Close modal handlers
+  const closeModal = () => backdrop.remove();
+  backdrop.querySelector(".modal-close")!.addEventListener("click", closeModal);
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) closeModal();
+  });
+
+  // Copy button
+  const copyButton = backdrop.querySelector<HTMLButtonElement>(".copy-button")!;
+  const copyIcon = copyButton.querySelector("img")!;
+  const urlInput = backdrop.querySelector<HTMLInputElement>(".url-input")!;
+
+  copyButton.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(urlInput.value);
+    copyIcon.src = "/clipboard-check.svg";
+
+    setTimeout(() => {
+      copyIcon.src = "/clipboard.svg";
+    }, 2000);
+  });
+
+  // Settings link from about modal
+  const settingsLink = backdrop.querySelector<HTMLAnchorElement>("#open-settings-from-about")!;
+  settingsLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeModal();
+    openSettingsModal();
+  });
+}
+
 function openSettingsModal() {
   // Remove existing modal if any
   const existingModal = document.querySelector(".modal-backdrop");
@@ -132,6 +218,7 @@ function openSettingsModal() {
 
   const currentDefault = getDefaultBangTrigger();
   const customBangs = getCustomBangs();
+  const currentTheme = getTheme();
 
   const backdrop = document.createElement("div");
   backdrop.className = "modal-backdrop";
@@ -142,6 +229,15 @@ function openSettingsModal() {
         <button class="modal-close" aria-label="Close">&times;</button>
       </div>
       <div class="modal-content">
+        <section class="settings-section">
+          <h3>Theme</h3>
+          <p class="settings-description">Choose your preferred appearance.</p>
+          <select id="theme-select" class="settings-select">
+            <option value="system" ${currentTheme === 'system' ? 'selected' : ''}>Follow system</option>
+            <option value="dark" ${currentTheme === 'dark' ? 'selected' : ''}>Always dark</option>
+          </select>
+        </section>
+
         <section class="settings-section">
           <h3>Default Search Engine</h3>
           <p class="settings-description">Used when no bang is specified in your search.</p>
@@ -215,6 +311,12 @@ function openSettingsModal() {
   backdrop.querySelector(".modal-close")!.addEventListener("click", closeModal);
   backdrop.addEventListener("click", (e) => {
     if (e.target === backdrop) closeModal();
+  });
+
+  // Theme select handler
+  const themeSelect = backdrop.querySelector<HTMLSelectElement>("#theme-select")!;
+  themeSelect.addEventListener("change", () => {
+    setTheme(themeSelect.value as Theme);
   });
 
   // Default bang select handler

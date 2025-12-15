@@ -199,76 +199,247 @@ textarea {
   color: #999;
 }
 
+/* Landing page */
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.landing-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+}
+
+.landing-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 32px;
+  letter-spacing: -0.02em;
+}
+
+.search-container {
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 18px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  background: #f9f9f9;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #888;
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+/* About modal content */
+.about-content {
+  text-align: center;
+}
+
+.about-content p {
+  margin-bottom: 12px;
+}
+
+/* Dark mode styles - triggered by system preference OR .dark class on html */
 @media (prefers-color-scheme: dark) {
-  body {
+  :root:not(.light) {
+    color-scheme: dark;
+  }
+  
+  :root:not(.light) body {
     color: #ddd;
   }
 
-  #app {
+  :root:not(.light) #app {
     background-color: #131313;
   }
 
-  a {
+  :root:not(.light) a {
     color: #a9a9a9;
   }
 
-  a:hover {
+  :root:not(.light) a:hover {
     color: #888;
   }
 
-  .tagline {
+  :root:not(.light) .tagline {
     color: #999;
   }
 
-  .feature-text {
+  :root:not(.light) .feature-text {
     color: #aaa;
   }
 
-  .footer,
-  .footer a {
+  :root:not(.light) .footer,
+  :root:not(.light) .footer a {
     color: #999;
   }
 
-  .footer a:hover {
+  :root:not(.light) .footer a:hover {
     color: #ccc;
   }
 
-  .footer-separator {
+  :root:not(.light) .footer-separator {
     color: #666;
   }
 
-  .url-input {
+  :root:not(.light) .search-input {
+    border-color: #3d3d3d;
+    background-color: #1f1f1f;
+    color: #fff;
+  }
+
+  :root:not(.light) .search-input:focus {
+    border-color: #666;
+    background-color: #222;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  :root:not(.light) .search-input::placeholder {
+    color: #666;
+  }
+
+  :root:not(.light) .url-input {
     border-color: #3d3d3d;
     background-color: #191919;
     color: #fff;
   }
 
-  .copy-button img {
+  :root:not(.light) .copy-button img {
     filter: invert(1);
   }
 
-  .copy-button:hover {
+  :root:not(.light) .copy-button:hover {
     background: #222;
   }
 
-  .copy-button:active {
+  :root:not(.light) .copy-button:active {
     background: #333;
   }
 
-  .settings-button {
+  :root:not(.light) .settings-button {
     background: #1f1f1f;
     border-color: #3d3d3d;
     color: #ddd;
   }
 
-  .settings-button:hover {
+  :root:not(.light) .settings-button:hover {
     background: #2a2a2a;
     border-color: #4d4d4d;
   }
 
-  .settings-button img {
+  :root:not(.light) .settings-button img {
     filter: invert(1);
   }
+}
+
+/* Force dark mode when .dark class is on html */
+:root.dark {
+  color-scheme: dark;
+}
+
+:root.dark body {
+  color: #ddd;
+}
+
+:root.dark #app {
+  background-color: #131313;
+}
+
+:root.dark a {
+  color: #a9a9a9;
+}
+
+:root.dark a:hover {
+  color: #888;
+}
+
+:root.dark .tagline {
+  color: #999;
+}
+
+:root.dark .feature-text {
+  color: #aaa;
+}
+
+:root.dark .footer,
+:root.dark .footer a {
+  color: #999;
+}
+
+:root.dark .footer a:hover {
+  color: #ccc;
+}
+
+:root.dark .footer-separator {
+  color: #666;
+}
+
+:root.dark .search-input {
+  border-color: #3d3d3d;
+  background-color: #1f1f1f;
+  color: #fff;
+}
+
+:root.dark .search-input:focus {
+  border-color: #666;
+  background-color: #222;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+:root.dark .search-input::placeholder {
+  color: #666;
+}
+
+:root.dark .url-input {
+  border-color: #3d3d3d;
+  background-color: #191919;
+  color: #fff;
+}
+
+:root.dark .copy-button img {
+  filter: invert(1);
+}
+
+:root.dark .copy-button:hover {
+  background: #222;
+}
+
+:root.dark .copy-button:active {
+  background: #333;
+}
+
+:root.dark .settings-button {
+  background: #1f1f1f;
+  border-color: #3d3d3d;
+  color: #ddd;
+}
+
+:root.dark .settings-button:hover {
+  background: #2a2a2a;
+  border-color: #4d4d4d;
+}
+
+:root.dark .settings-button img {
+  filter: invert(1);
 }
 
 /* Modal styles */
@@ -553,100 +724,198 @@ textarea {
   }
 }
 
+/* Modal dark mode - system preference */
 @media (prefers-color-scheme: dark) {
-  .modal {
+  :root:not(.light) .modal {
     background: #1a1a1a;
     color: #ddd;
   }
 
-  .modal-header {
+  :root:not(.light) .modal-header {
     background: #1a1a1a;
     border-bottom-color: #333;
   }
 
-  .modal-close {
+  :root:not(.light) .modal-close {
     color: #999;
   }
 
-  .modal-close:hover {
+  :root:not(.light) .modal-close:hover {
     color: #fff;
   }
 
-  .settings-description {
+  :root:not(.light) .settings-description {
     color: #999;
   }
 
-  .settings-select,
-  .settings-input {
+  :root:not(.light) .settings-select,
+  :root:not(.light) .settings-input {
     background: #222;
     border-color: #444;
     color: #fff;
   }
 
-  .settings-select:focus,
-  .settings-input:focus {
+  :root:not(.light) .settings-select:focus,
+  :root:not(.light) .settings-input:focus {
     border-color: #666;
     background: #2a2a2a;
   }
 
-  .custom-bang-item {
+  :root:not(.light) .custom-bang-item {
     background: #222;
   }
 
-  .custom-bang-url {
+  :root:not(.light) .custom-bang-url {
     color: #888;
   }
 
-  .custom-bang-name {
+  :root:not(.light) .custom-bang-name {
     color: #999;
   }
 
-  .empty-state {
+  :root:not(.light) .empty-state {
     color: #666;
   }
 
-  .add-bang-form {
+  :root:not(.light) .add-bang-form {
     background: #222;
   }
 
-  .form-row label {
+  :root:not(.light) .form-row label {
     color: #bbb;
   }
 
-  .form-row .settings-input {
+  :root:not(.light) .form-row .settings-input {
     background: #1a1a1a;
   }
 
-  .conflict-warning {
+  :root:not(.light) .conflict-warning {
     background: #3d2600;
     color: #ffb74d;
   }
 
-  .btn-primary {
+  :root:not(.light) .btn-primary {
     background: #fff;
     color: #1a1a1a;
   }
 
-  .btn-primary:hover {
+  :root:not(.light) .btn-primary:hover {
     background: #eee;
   }
 
-  .btn-secondary {
+  :root:not(.light) .btn-secondary {
     background: #333;
     color: #ddd;
   }
 
-  .btn-secondary:hover {
+  :root:not(.light) .btn-secondary:hover {
     background: #444;
   }
 
-  .custom-bang-edit:hover {
+  :root:not(.light) .custom-bang-edit:hover {
     color: #64b5f6;
     background: rgba(100, 181, 246, 0.15);
   }
 
-  .custom-bang-delete:hover {
+  :root:not(.light) .custom-bang-delete:hover {
     color: #ef5350;
     background: rgba(239, 83, 80, 0.15);
   }
+}
+
+/* Modal dark mode - forced via .dark class */
+:root.dark .modal {
+  background: #1a1a1a;
+  color: #ddd;
+}
+
+:root.dark .modal-header {
+  background: #1a1a1a;
+  border-bottom-color: #333;
+}
+
+:root.dark .modal-close {
+  color: #999;
+}
+
+:root.dark .modal-close:hover {
+  color: #fff;
+}
+
+:root.dark .settings-description {
+  color: #999;
+}
+
+:root.dark .settings-select,
+:root.dark .settings-input {
+  background: #222;
+  border-color: #444;
+  color: #fff;
+}
+
+:root.dark .settings-select:focus,
+:root.dark .settings-input:focus {
+  border-color: #666;
+  background: #2a2a2a;
+}
+
+:root.dark .custom-bang-item {
+  background: #222;
+}
+
+:root.dark .custom-bang-url {
+  color: #888;
+}
+
+:root.dark .custom-bang-name {
+  color: #999;
+}
+
+:root.dark .empty-state {
+  color: #666;
+}
+
+:root.dark .add-bang-form {
+  background: #222;
+}
+
+:root.dark .form-row label {
+  color: #bbb;
+}
+
+:root.dark .form-row .settings-input {
+  background: #1a1a1a;
+}
+
+:root.dark .conflict-warning {
+  background: #3d2600;
+  color: #ffb74d;
+}
+
+:root.dark .btn-primary {
+  background: #fff;
+  color: #1a1a1a;
+}
+
+:root.dark .btn-primary:hover {
+  background: #eee;
+}
+
+:root.dark .btn-secondary {
+  background: #333;
+  color: #ddd;
+}
+
+:root.dark .btn-secondary:hover {
+  background: #444;
+}
+
+:root.dark .custom-bang-edit:hover {
+  color: #64b5f6;
+  background: rgba(100, 181, 246, 0.15);
+}
+
+:root.dark .custom-bang-delete:hover {
+  color: #ef5350;
+  background: rgba(239, 83, 80, 0.15);
 }
