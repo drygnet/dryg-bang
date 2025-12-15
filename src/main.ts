@@ -506,18 +506,63 @@ function openSettingsModal() {
   const favoritesResults = backdrop.querySelector<HTMLDivElement>("#favorites-results")!;
 
   favoritesSearch.addEventListener("input", () => {
-    const query = favoritesSearch.value.trim().toLowerCase();
+    let query = favoritesSearch.value.trim().toLowerCase();
     if (query.length < 2) {
       favoritesResults.classList.add("hidden");
       return;
     }
 
-    // Search built-in bangs
-    const matches = bangs.filter(b => 
+    // Strip leading ! if present (so "!g" searches for "g")
+    if (query.startsWith('!')) {
+      query = query.slice(1);
+      if (query.length === 0) {
+        favoritesResults.classList.add("hidden");
+        return;
+      }
+    }
+
+    // Search built-in bangs with smart ranking
+    const allMatches = bangs.filter(b => 
       b.t.toLowerCase().includes(query) ||
       b.s.toLowerCase().includes(query) ||
       (b.d && b.d.toLowerCase().includes(query))
-    ).slice(0, 10);
+    );
+
+    // Sort by relevance:
+    // 1. Exact trigger match
+    // 2. Trigger starts with query
+    // 3. Service name starts with query
+    // 4. Trigger contains query
+    // 5. Everything else
+    const matches = allMatches.sort((a, b) => {
+      const aT = a.t.toLowerCase();
+      const bT = b.t.toLowerCase();
+      const aS = a.s.toLowerCase();
+      const bS = b.s.toLowerCase();
+
+      // Exact trigger match gets highest priority
+      if (aT === query && bT !== query) return -1;
+      if (bT === query && aT !== query) return 1;
+
+      // Trigger starts with query
+      const aStartsT = aT.startsWith(query);
+      const bStartsT = bT.startsWith(query);
+      if (aStartsT && !bStartsT) return -1;
+      if (bStartsT && !aStartsT) return 1;
+
+      // Service name equals query
+      if (aS === query && bS !== query) return -1;
+      if (bS === query && aS !== query) return 1;
+
+      // Service name starts with query
+      const aStartsS = aS.startsWith(query);
+      const bStartsS = bS.startsWith(query);
+      if (aStartsS && !bStartsS) return -1;
+      if (bStartsS && !aStartsS) return 1;
+
+      // Shorter triggers are usually more relevant
+      return aT.length - bT.length;
+    }).slice(0, 10);
 
     if (matches.length === 0) {
       favoritesResults.innerHTML = '<div class="favorites-empty">No bangs found</div>';
