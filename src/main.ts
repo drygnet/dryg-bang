@@ -101,6 +101,186 @@ function noSearchDefaultPageRender() {
       copyIcon.src = "/clipboard.svg";
     }, 2000);
   });
+
+  // Settings button
+  const settingsButton = app.querySelector<HTMLButtonElement>("#open-settings")!;
+  settingsButton.addEventListener("click", openSettingsModal);
+}
+
+// Popular search engines for the default bang dropdown
+const popularBangs = [
+  { t: "g", s: "Google" },
+  { t: "ddg", s: "DuckDuckGo" },
+  { t: "b", s: "Bing" },
+  { t: "sp", s: "Startpage" },
+  { t: "brave", s: "Brave Search" },
+  { t: "ka", s: "Kagi" },
+];
+
+function openSettingsModal() {
+  // Remove existing modal if any
+  const existingModal = document.querySelector(".modal-backdrop");
+  if (existingModal) existingModal.remove();
+
+  const currentDefault = getDefaultBangTrigger();
+  const customBangs = getCustomBangs();
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-content">
+        <section class="settings-section">
+          <h3>Default Search Engine</h3>
+          <p class="settings-description">Used when no bang is specified in your search.</p>
+          <select id="default-bang-select" class="settings-select">
+            ${popularBangs.map(b => `<option value="${b.t}" ${b.t === currentDefault ? 'selected' : ''}>${b.s} (!${b.t})</option>`).join('')}
+            <option value="_custom" ${!popularBangs.find(b => b.t === currentDefault) ? 'selected' : ''}>Custom...</option>
+          </select>
+          <input 
+            type="text" 
+            id="custom-default-input" 
+            class="settings-input ${popularBangs.find(b => b.t === currentDefault) ? 'hidden' : ''}"
+            placeholder="Enter bang trigger (e.g., sp)"
+            value="${!popularBangs.find(b => b.t === currentDefault) ? currentDefault : ''}"
+          />
+        </section>
+
+        <section class="settings-section">
+          <h3>Custom Bangs</h3>
+          <p class="settings-description">Add your own bang shortcuts. These override built-in bangs.</p>
+          
+          <div id="custom-bangs-list" class="custom-bangs-list">
+            ${customBangs.length === 0 ? '<p class="empty-state">No custom bangs yet.</p>' : 
+              customBangs.map(b => `
+                <div class="custom-bang-item" data-trigger="${b.t}">
+                  <div class="custom-bang-info">
+                    <strong>!${b.t}</strong>${b.s ? ` <span class="custom-bang-name">— ${b.s}</span>` : ''}
+                    <span class="custom-bang-url">${b.u}</span>
+                  </div>
+                  <button class="custom-bang-delete" data-trigger="${b.t}" aria-label="Delete">×</button>
+                </div>
+              `).join('')}
+          </div>
+
+          <div class="add-bang-form">
+            <h4>Add New Bang</h4>
+            <div class="form-row">
+              <label for="new-bang-trigger">Trigger</label>
+              <input type="text" id="new-bang-trigger" class="settings-input" placeholder="e.g., mysite" />
+            </div>
+            <div class="form-row">
+              <label for="new-bang-name">Name (optional)</label>
+              <input type="text" id="new-bang-name" class="settings-input" placeholder="e.g., My Site Search" />
+            </div>
+            <div class="form-row">
+              <label for="new-bang-url">URL Template</label>
+              <input type="text" id="new-bang-url" class="settings-input" placeholder="https://example.com/search?q={{{s}}}" />
+            </div>
+            <div class="form-row">
+              <label for="new-bang-domain">Domain (optional)</label>
+              <input type="text" id="new-bang-domain" class="settings-input" placeholder="example.com" />
+            </div>
+            <div id="bang-conflict-warning" class="conflict-warning hidden"></div>
+            <button id="add-bang-btn" class="btn-primary">Add Bang</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(backdrop);
+
+  // Close modal handlers
+  const closeModal = () => backdrop.remove();
+  backdrop.querySelector(".modal-close")!.addEventListener("click", closeModal);
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) closeModal();
+  });
+
+  // Default bang select handler
+  const defaultSelect = backdrop.querySelector<HTMLSelectElement>("#default-bang-select")!;
+  const customDefaultInput = backdrop.querySelector<HTMLInputElement>("#custom-default-input")!;
+  
+  defaultSelect.addEventListener("change", () => {
+    if (defaultSelect.value === "_custom") {
+      customDefaultInput.classList.remove("hidden");
+      customDefaultInput.focus();
+    } else {
+      customDefaultInput.classList.add("hidden");
+      setDefaultBangTrigger(defaultSelect.value);
+    }
+  });
+
+  customDefaultInput.addEventListener("input", () => {
+    const trigger = customDefaultInput.value.trim().toLowerCase();
+    if (trigger) {
+      setDefaultBangTrigger(trigger);
+    }
+  });
+
+  // Delete custom bang handlers
+  backdrop.querySelectorAll<HTMLButtonElement>(".custom-bang-delete").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const trigger = btn.dataset.trigger!;
+      removeCustomBang(trigger);
+      // Re-render modal
+      closeModal();
+      openSettingsModal();
+    });
+  });
+
+  // Add new bang handler
+  const triggerInput = backdrop.querySelector<HTMLInputElement>("#new-bang-trigger")!;
+  const nameInput = backdrop.querySelector<HTMLInputElement>("#new-bang-name")!;
+  const urlInput = backdrop.querySelector<HTMLInputElement>("#new-bang-url")!;
+  const domainInput = backdrop.querySelector<HTMLInputElement>("#new-bang-domain")!;
+  const conflictWarning = backdrop.querySelector<HTMLDivElement>("#bang-conflict-warning")!;
+  const addBtn = backdrop.querySelector<HTMLButtonElement>("#add-bang-btn")!;
+
+  // Check for conflicts when typing trigger
+  triggerInput.addEventListener("input", () => {
+    const trigger = triggerInput.value.trim().toLowerCase();
+    const conflict = getBuiltInBangConflict(trigger);
+    if (conflict) {
+      conflictWarning.textContent = `⚠️ Overrides: ${conflict.s} (!${conflict.t})`;
+      conflictWarning.classList.remove("hidden");
+    } else {
+      conflictWarning.classList.add("hidden");
+    }
+  });
+
+  addBtn.addEventListener("click", () => {
+    const trigger = triggerInput.value.trim().toLowerCase();
+    const name = nameInput.value.trim();
+    const url = urlInput.value.trim();
+    const domain = domainInput.value.trim();
+
+    if (!trigger || !url) {
+      alert("Please fill in both trigger and URL template.");
+      return;
+    }
+
+    if (!url.includes("{{{s}}}")) {
+      alert("URL template must include {{{s}}} as the search placeholder.");
+      return;
+    }
+
+    addCustomBang({
+      t: trigger,
+      u: url,
+      s: name || undefined,
+      d: domain || undefined,
+    });
+
+    // Re-render modal
+    closeModal();
+    openSettingsModal();
+  });
 }
 
 // Get default bang object

@@ -236,3 +236,321 @@ textarea {
     filter: invert(1);
   }
 }
+
+/* Modal styles */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.modal-close {
+  font-size: 28px;
+  line-height: 1;
+  color: #666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.modal-close:hover {
+  color: #333;
+}
+
+.modal-content {
+  padding: 20px;
+}
+
+.settings-section {
+  margin-bottom: 28px;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-section h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.settings-description {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.settings-select,
+.settings-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #f9f9f9;
+}
+
+.settings-select:focus,
+.settings-input:focus {
+  outline: none;
+  border-color: #666;
+  background: #fff;
+}
+
+.settings-input.hidden {
+  display: none;
+}
+
+.custom-bangs-list {
+  margin-bottom: 20px;
+}
+
+.empty-state {
+  color: #888;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.custom-bang-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.custom-bang-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.custom-bang-info strong {
+  font-size: 14px;
+}
+
+.custom-bang-name {
+  font-weight: 400;
+  color: #666;
+}
+
+.custom-bang-url {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.custom-bang-delete {
+  font-size: 20px;
+  color: #999;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.custom-bang-delete:hover {
+  color: #e53935;
+}
+
+.add-bang-form {
+  background: #f9f9f9;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.add-bang-form h4 {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.form-row {
+  margin-bottom: 12px;
+}
+
+.form-row label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #444;
+}
+
+.form-row .settings-input {
+  background: #fff;
+}
+
+.conflict-warning {
+  font-size: 13px;
+  color: #e65100;
+  padding: 8px 12px;
+  background: #fff3e0;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.conflict-warning.hidden {
+  display: none;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 10px 16px;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #333;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Mobile fullscreen modal */
+@media (max-width: 640px) {
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .modal-header {
+    border-radius: 16px 16px 0 0;
+  }
+
+  .custom-bang-url {
+    max-width: 200px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .modal {
+    background: #1a1a1a;
+    color: #ddd;
+  }
+
+  .modal-header {
+    background: #1a1a1a;
+    border-bottom-color: #333;
+  }
+
+  .modal-close {
+    color: #999;
+  }
+
+  .modal-close:hover {
+    color: #fff;
+  }
+
+  .settings-description {
+    color: #999;
+  }
+
+  .settings-select,
+  .settings-input {
+    background: #222;
+    border-color: #444;
+    color: #fff;
+  }
+
+  .settings-select:focus,
+  .settings-input:focus {
+    border-color: #666;
+    background: #2a2a2a;
+  }
+
+  .custom-bang-item {
+    background: #222;
+  }
+
+  .custom-bang-url {
+    color: #888;
+  }
+
+  .custom-bang-name {
+    color: #999;
+  }
+
+  .empty-state {
+    color: #666;
+  }
+
+  .add-bang-form {
+    background: #222;
+  }
+
+  .form-row label {
+    color: #bbb;
+  }
+
+  .form-row .settings-input {
+    background: #1a1a1a;
+  }
+
+  .conflict-warning {
+    background: #3d2600;
+    color: #ffb74d;
+  }
+
+  .btn-primary {
+    background: #fff;
+    color: #1a1a1a;
+  }
+
+  .btn-primary:hover {
+    background: #eee;
+  }
+}
