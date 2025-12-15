@@ -129,6 +129,33 @@ textarea {
   background: #28a745;
 }
 
+/* Settings button */
+.settings-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 10px 20px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.settings-button:hover {
+  background: #e8e8e8;
+  border-color: #ccc;
+}
+
+.settings-button img {
+  width: 18px;
+  height: 18px;
+}
+
 /* Add footer styles */
 .footer {
   position: fixed;
@@ -192,5 +219,20 @@ textarea {
 
   .copy-button:active {
     background: #333;
+  }
+
+  .settings-button {
+    background: #1f1f1f;
+    border-color: #3d3d3d;
+    color: #ddd;
+  }
+
+  .settings-button:hover {
+    background: #2a2a2a;
+    border-color: #4d4d4d;
+  }
+
+  .settings-button img {
+    filter: invert(1);
   }
 }
