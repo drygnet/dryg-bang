@@ -97,6 +97,7 @@ function noSearchDefaultPageRender() {
             placeholder="Search or type a !bang..."
             autofocus
           />
+          <div class="autocomplete-dropdown hidden"></div>
         </div>
       </main>
       <footer class="footer">
@@ -123,14 +124,114 @@ function noSearchDefaultPageRender() {
     openAboutModal();
   });
 
-  // Search input - navigate to ?q= on Enter
+  // Search input with autocomplete
   const searchInput = app.querySelector<HTMLInputElement>(".search-input")!;
+  const dropdown = app.querySelector<HTMLDivElement>(".autocomplete-dropdown")!;
+  let selectedIndex = -1;
+
+  function updateAutocomplete() {
+    const value = searchInput.value;
+    const bangMatch = value.match(/!(\S*)$/i);
+    
+    if (!bangMatch) {
+      dropdown.classList.add("hidden");
+      selectedIndex = -1;
+      return;
+    }
+
+    const partial = bangMatch[1].toLowerCase();
+    const customBangs = getCustomBangs();
+    
+    // Filter custom bangs that match the partial
+    const matches = customBangs.filter(b => 
+      b.t.toLowerCase().startsWith(partial) ||
+      (b.s && b.s.toLowerCase().includes(partial))
+    ).slice(0, 8); // Limit to 8 suggestions
+
+    if (matches.length === 0) {
+      dropdown.classList.add("hidden");
+      selectedIndex = -1;
+      return;
+    }
+
+    dropdown.innerHTML = matches.map((b, i) => `
+      <div class="autocomplete-item ${i === selectedIndex ? 'selected' : ''}" data-trigger="${b.t}">
+        <span class="autocomplete-bang">!${b.t}</span>
+        ${b.s ? `<span class="autocomplete-name">${b.s}</span>` : ''}
+      </div>
+    `).join('');
+
+    dropdown.classList.remove("hidden");
+
+    // Add click handlers
+    dropdown.querySelectorAll<HTMLDivElement>(".autocomplete-item").forEach(item => {
+      item.addEventListener("click", () => {
+        selectBang(item.dataset.trigger!);
+      });
+    });
+  }
+
+  function selectBang(trigger: string) {
+    const value = searchInput.value;
+    // Replace the partial bang with the selected one
+    searchInput.value = value.replace(/!\S*$/i, `!${trigger} `);
+    dropdown.classList.add("hidden");
+    selectedIndex = -1;
+    searchInput.focus();
+  }
+
+  searchInput.addEventListener("input", updateAutocomplete);
+
   searchInput.addEventListener("keydown", (e: KeyboardEvent) => {
+    const items = dropdown.querySelectorAll<HTMLDivElement>(".autocomplete-item");
+    
+    if (!dropdown.classList.contains("hidden") && items.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+        updateSelection(items);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, 0);
+        updateSelection(items);
+        return;
+      }
+      if (e.key === "Tab" || (e.key === "Enter" && selectedIndex >= 0)) {
+        e.preventDefault();
+        const selected = items[selectedIndex];
+        if (selected) {
+          selectBang(selected.dataset.trigger!);
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        dropdown.classList.add("hidden");
+        selectedIndex = -1;
+        return;
+      }
+    }
+
     if (e.key === "Enter") {
       const query = searchInput.value.trim();
       if (query) {
         window.location.href = `?q=${encodeURIComponent(query)}`;
       }
+    }
+  });
+
+  function updateSelection(items: NodeListOf<HTMLDivElement>) {
+    items.forEach((item, i) => {
+      item.classList.toggle("selected", i === selectedIndex);
+    });
+  }
+
+  // Hide dropdown when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!searchInput.contains(e.target as Node) && !dropdown.contains(e.target as Node)) {
+      dropdown.classList.add("hidden");
+      selectedIndex = -1;
     }
   });
 }
@@ -255,8 +356,26 @@ function openSettingsModal() {
         </section>
 
         <section class="settings-section">
+          <h3>Favorite Bangs</h3>
+          <p class="settings-description">Search and add built-in bangs to your favorites. These appear in autocomplete.</p>
+          <div class="favorites-search-container">
+            <input 
+              type="text" 
+              id="favorites-search" 
+              class="settings-input"
+              placeholder="Search bangs (e.g., github, youtube, wiki...)"
+            />
+            <div id="favorites-results" class="favorites-results hidden"></div>
+          </div>
+          <div id="favorites-list" class="custom-bangs-list">
+            ${customBangs.filter(b => b.d && !b.u.includes('{{{s}}}')).length === 0 && customBangs.length === 0 ? 
+              '<p class="empty-state">No favorites yet. Search above to add some!</p>' : ''}
+          </div>
+        </section>
+
+        <section class="settings-section">
           <h3>Custom Bangs</h3>
-          <p class="settings-description">Add your own bang shortcuts. These override built-in bangs.</p>
+          <p class="settings-description">Create your own bang shortcuts for any site.</p>
           
           <div id="custom-bangs-list" class="custom-bangs-list">
             ${customBangs.length === 0 ? '<p class="empty-state">No custom bangs yet.</p>' : 
@@ -338,6 +457,67 @@ function openSettingsModal() {
     if (trigger) {
       setDefaultBangTrigger(trigger);
     }
+  });
+
+  // Favorites search
+  const favoritesSearch = backdrop.querySelector<HTMLInputElement>("#favorites-search")!;
+  const favoritesResults = backdrop.querySelector<HTMLDivElement>("#favorites-results")!;
+
+  favoritesSearch.addEventListener("input", () => {
+    const query = favoritesSearch.value.trim().toLowerCase();
+    if (query.length < 2) {
+      favoritesResults.classList.add("hidden");
+      return;
+    }
+
+    // Search built-in bangs
+    const matches = bangs.filter(b => 
+      b.t.toLowerCase().includes(query) ||
+      b.s.toLowerCase().includes(query) ||
+      (b.d && b.d.toLowerCase().includes(query))
+    ).slice(0, 10);
+
+    if (matches.length === 0) {
+      favoritesResults.innerHTML = '<div class="favorites-empty">No bangs found</div>';
+      favoritesResults.classList.remove("hidden");
+      return;
+    }
+
+    favoritesResults.innerHTML = matches.map(b => {
+      const isAdded = customBangs.some(cb => cb.t === b.t);
+      return `
+        <div class="favorites-result-item ${isAdded ? 'added' : ''}" data-trigger="${b.t}">
+          <div class="favorites-result-info">
+            <strong>!${b.t}</strong>
+            <span class="favorites-result-name">${b.s}</span>
+          </div>
+          <button class="favorites-add-btn" data-trigger="${b.t}" ${isAdded ? 'disabled' : ''}>
+            ${isAdded ? '✓' : '+'}
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    favoritesResults.classList.remove("hidden");
+
+    // Add click handlers for add buttons
+    favoritesResults.querySelectorAll<HTMLButtonElement>(".favorites-add-btn:not([disabled])").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const trigger = btn.dataset.trigger!;
+        const bang = bangs.find(b => b.t === trigger);
+        if (bang) {
+          addCustomBang({
+            t: bang.t,
+            u: bang.u,
+            s: bang.s,
+            d: bang.d,
+          });
+          // Re-render modal
+          closeModal();
+          openSettingsModal();
+        }
+      });
+    });
   });
 
   // Delete custom bang handlers
