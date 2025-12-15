@@ -1,13 +1,51 @@
-# Unduck
+# Dryg Search
 
-DuckDuckGo's bang redirects are too slow. Add the following URL as a custom search engine to your browser. Enables all of DuckDuckGo's bangs to work, but much faster.
+A fork of [unduck.link](https://unduck.link) by [Theo](https://github.com/t3dotgg) — fast client-side bang redirects for your browser.
 
 ```
-https://unduck.link?q=%s
+https://search.dryg.net?q=%s
 ```
 
-## How is it that much faster?
+Add the URL above as a custom search engine in your browser to enable all of [DuckDuckGo's bangs](https://duckduckgo.com/bang.html), but much faster.
 
-DuckDuckGo does their redirects server side. Their DNS is...not always great. Result is that it often takes ages.
+## Why a fork?
 
-I solved this by doing all of the work client side. Once you've went to https://unduck.link once, the JS is all cache'd and will never need to be downloaded again. Your device does the redirects, not me.
+This fork adds **custom bangs** and a **configurable default search engine**, which makes it particularly useful for:
+
+- **Enterprise/internal tools** – Create bangs for your company's Jira, Confluence, internal wikis, or any SaaS app with custom domains
+- **Self-hosted services** – Point bangs to your own GitLab, Nextcloud, or other self-hosted instances
+- **Regional services** – Override built-in bangs for services that have different URLs in your country
+- **Personal shortcuts** – Quick access to any searchable site you use frequently
+
+### Example use cases
+
+| Bang | URL Template | Use case |
+|------|-------------|----------|
+| `!jira` | `https://yourcompany.atlassian.net/browse/{{{s}}}` | Jump to Jira tickets |
+| `!wiki` | `https://wiki.internal.company/search?q={{{s}}}` | Search internal wiki |
+| `!gl` | `https://gitlab.yourcompany.com/search?search={{{s}}}` | Search self-hosted GitLab |
+| `!slack` | `https://yourcompany.slack.com/search/query={{{s}}}` | Search Slack workspace |
+
+## How it works
+
+All redirects happen client-side in your browser. Once loaded, the JavaScript is cached and works offline. No server processing, no tracking, instant redirects.
+
+## Features
+
+- ✅ All 13,000+ DuckDuckGo bangs
+- ✅ Custom bangs (stored in localStorage)
+- ✅ Configurable default search engine
+- ✅ PWA with offline support
+- ✅ Dark mode
+
+## Development
+
+```bash
+pnpm install
+pnpm dev      # Start dev server
+pnpm build    # Build for production
+```
+
+## Credits
+
+Based on [unduck](https://github.com/t3dotgg/unduck) by Theo. Bang data sourced from DuckDuckGo.

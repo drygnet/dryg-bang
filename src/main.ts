@@ -66,7 +66,8 @@ function noSearchDefaultPageRender() {
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
       <div class="content-container">
         <h1>Dryg Search</h1>
-        <p>DuckDuckGo's bang redirects are too slow. Add the following URL as a custom search engine to your browser. Enables <a href="https://duckduckgo.com/bang.html" target="_blank">all of DuckDuckGo's bangs.</a></p>
+        <p class="tagline">A fork of <a href="https://unduck.link" target="_blank">unduck.link</a> with custom bangs.</p>
+        <p>Fast client-side bang redirects. Add the URL below as a custom search engine in your browser to enable <a href="https://duckduckgo.com/bang.html" target="_blank">all of DuckDuckGo's bangs</a>.</p>
         <div class="url-container"> 
           <input 
             type="text" 
@@ -78,6 +79,7 @@ function noSearchDefaultPageRender() {
             <img src="/clipboard.svg" alt="Copy" />
           </button>
         </div>
+        <p class="feature-text">💡 Add <strong>custom bangs</strong> for enterprise apps, internal tools, or self-hosted services in Settings.</p>
         <button class="settings-button" id="open-settings">
           <img src="/settings.svg" alt="Settings" />
           Settings
