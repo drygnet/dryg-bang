@@ -987,6 +987,33 @@ textarea {
     color: #ef5350;
     background: rgba(239, 83, 80, 0.15);
   }
+
+  :root:not(.light) .favorites-results {
+    background: #1a1a1a;
+    border-color: #333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  :root:not(.light) .favorites-result-item {
+    border-bottom-color: #333;
+  }
+
+  :root:not(.light) .favorites-result-name {
+    color: #999;
+  }
+
+  :root:not(.light) .favorites-add-btn {
+    background: #fff;
+    color: #1a1a1a;
+  }
+
+  :root:not(.light) .favorites-add-btn:hover:not([disabled]) {
+    background: #eee;
+  }
+
+  :root:not(.light) .favorites-empty {
+    color: #666;
+  }
 }
 
 /* Modal dark mode - forced via .dark class */
@@ -1089,6 +1116,7 @@ textarea {
 :root.dark .favorites-results {
   background: #1a1a1a;
   border-color: #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 :root.dark .favorites-result-item {
