@@ -16,12 +16,17 @@ A client-side bang redirect service running on `search.dryg.net`. Users add `htt
 src/
 ├── main.ts    # Entry point: URL parsing, redirect logic, landing page UI, settings modal
 ├── bang.ts    # ~122k lines of bang definitions (auto-generated from DuckDuckGo)
-└── global.css # Styling with Inter font, dark mode, modal (fullscreen on mobile)
+└── global.css # Styling with Inter font, dark mode, settings button, modal (fullscreen on mobile)
+public/
+├── clipboard.svg      # Copy icon
+├── clipboard-check.svg # Copy success icon
+├── search.svg         # Favicon
+└── settings.svg       # Settings button icon
 ```
 
 **Key flow in `main.ts`:**
 1. Parse `?q=` query param for bang pattern (`!shortcut`)
-2. Look up bang in custom bangs first, then built-in `bangs` array
+2. Look up bang via `findBang()` - checks custom bangs first, then built-in `bangs` array
 3. Replace `{{{s}}}` placeholder in URL template with encoded query
 4. `window.location.replace()` to redirect (or render landing page if no query)
 
@@ -40,19 +45,38 @@ pnpm preview  # Preview production build
 ## Code Patterns
 
 ### Bang Data Structure
-Each bang in `bang.ts` follows this shape:
+Built-in bangs in `bang.ts` follow this shape:
 ```typescript
 { c: "Category", d: "domain.com", r: 0, s: "Service Name", sc: "Subcategory", t: "shortcut", u: "https://...{{{s}}}" }
 ```
-- `t` = trigger (the bang shortcut without `!`)
-- `u` = URL template with `{{{s}}}` as search placeholder
-- `d` = domain (used for empty queries: `!gh` → `github.com`)
+
+Custom bangs use the `CustomBang` interface:
+```typescript
+interface CustomBang {
+  t: string;  // trigger (the bang shortcut without `!`)
+  u: string;  // URL template with {{{s}}} as search placeholder
+  s?: string; // service name (optional)
+  d?: string; // domain for empty queries (optional)
+}
+```
 
 ### localStorage Keys
 - `dryg-default-bang` - Default search engine trigger (e.g., `"g"`, `"ddg"`)
-- `dryg-custom-bangs` - JSON array of custom bang objects `{t, u, s?, d?}`
+- `dryg-custom-bangs` - JSON array of custom bang objects
 
 Custom bangs take priority over built-in bangs when triggers conflict.
+
+### Storage Helper Functions
+```typescript
+getDefaultBangTrigger(): string     // Get default bang trigger from localStorage
+setDefaultBangTrigger(trigger)      // Save default bang trigger
+getCustomBangs(): CustomBang[]      // Get all custom bangs
+setCustomBangs(bangs)               // Save custom bangs array
+addCustomBang(bang)                 // Add/update a custom bang
+removeCustomBang(trigger)           // Remove a custom bang by trigger
+findBang(trigger)                   // Find bang - custom first, then built-in
+getBuiltInBangConflict(trigger)     // Check if trigger conflicts with built-in
+```
 
 ### URL Encoding
 The code replaces `%2F` back to `/` after encoding to support paths like `!ghr+user/repo`.
@@ -69,8 +93,8 @@ The code replaces `%2F` back to `/` after encoding to support paths like `!ghr+u
 
 | File | Purpose |
 |------|---------|
-| `src/main.ts` | All application logic: redirect, landing page, settings modal |
+| `src/main.ts` | All application logic: redirect, landing page, storage helpers, settings modal |
 | `src/bang.ts` | Bang definitions - treat as data, not code |
-| `src/global.css` | Styling including modal and mobile fullscreen |
+| `src/global.css` | Styling including settings button, modal and mobile fullscreen |
 | `vite.config.ts` | PWA configuration with manifest |
-| `public/*.svg` | UI icons |
+| `public/*.svg` | UI icons (clipboard, settings, search) |
