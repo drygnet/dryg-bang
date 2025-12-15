@@ -1,6 +1,65 @@
 import { bangs } from "./bang";
 import "./global.css";
 
+// Types
+interface CustomBang {
+  t: string;  // trigger
+  u: string;  // URL template with {{{s}}}
+  s?: string; // service name
+  d?: string; // domain for empty queries
+}
+
+// Storage keys
+const LS_KEY_DEFAULT_BANG = "dryg-default-bang";
+const LS_KEY_CUSTOM_BANGS = "dryg-custom-bangs";
+
+// Storage helpers
+function getDefaultBangTrigger(): string {
+  return localStorage.getItem(LS_KEY_DEFAULT_BANG) ?? "g";
+}
+
+function setDefaultBangTrigger(trigger: string): void {
+  localStorage.setItem(LS_KEY_DEFAULT_BANG, trigger);
+}
+
+function getCustomBangs(): CustomBang[] {
+  try {
+    const stored = localStorage.getItem(LS_KEY_CUSTOM_BANGS);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setCustomBangs(bangs: CustomBang[]): void {
+  localStorage.setItem(LS_KEY_CUSTOM_BANGS, JSON.stringify(bangs));
+}
+
+function addCustomBang(bang: CustomBang): void {
+  const existing = getCustomBangs();
+  // Remove any existing bang with the same trigger
+  const filtered = existing.filter((b) => b.t !== bang.t);
+  setCustomBangs([...filtered, bang]);
+}
+
+function removeCustomBang(trigger: string): void {
+  const existing = getCustomBangs();
+  setCustomBangs(existing.filter((b) => b.t !== trigger));
+}
+
+// Find a bang by trigger - custom bangs take priority
+function findBang(trigger: string): CustomBang | typeof bangs[number] | undefined {
+  const customBangs = getCustomBangs();
+  const customMatch = customBangs.find((b) => b.t === trigger);
+  if (customMatch) return customMatch;
+  return bangs.find((b) => b.t === trigger);
+}
+
+// Check if a trigger conflicts with a built-in bang
+function getBuiltInBangConflict(trigger: string): typeof bangs[number] | undefined {
+  return bangs.find((b) => b.t === trigger);
+}
+
 function noSearchDefaultPageRender() {
   const app = document.querySelector<HTMLDivElement>("#app")!;
   app.innerHTML = `
@@ -44,8 +103,11 @@ function noSearchDefaultPageRender() {
   });
 }
 
-const LS_DEFAULT_BANG = localStorage.getItem("default-bang") ?? "g";
-const defaultBang = bangs.find((b) => b.t === LS_DEFAULT_BANG);
+// Get default bang object
+function getDefaultBang() {
+  const trigger = getDefaultBangTrigger();
+  return findBang(trigger) ?? bangs.find((b) => b.t === "g");
+}
 
 function getBangredirectUrl() {
   const url = new URL(window.location.href);
@@ -58,20 +120,23 @@ function getBangredirectUrl() {
   const match = query.match(/!(\S+)/i);
 
   const bangCandidate = match?.[1]?.toLowerCase();
-  const selectedBang = bangs.find((b) => b.t === bangCandidate) ?? defaultBang;
+  // Use findBang to check custom bangs first, then built-in
+  const selectedBang = bangCandidate 
+    ? findBang(bangCandidate) ?? getDefaultBang()
+    : getDefaultBang();
 
   // Remove the first bang from the query
   const cleanQuery = query.replace(/!\S+\s*/i, "").trim();
 
-  // If the query is just `!gh`, use `github.com` instead of `github.com/search?q=`
+  // If the query is just `!gh`, use domain instead of search URL
   if (cleanQuery === "")
-    return selectedBang ? `https://${selectedBang.d}` : null;
+    return selectedBang?.d ? `https://${selectedBang.d}` : null;
 
   // Format of the url is:
   // https://www.google.com/search?q={{{s}}}
   const searchUrl = selectedBang?.u.replace(
     "{{{s}}}",
-    // Replace %2F with / to fix formats like "!ghr+t3dotgg/unduck"
+    // Replace %2F with / to fix formats like "!ghr+user/repo"
     encodeURIComponent(cleanQuery).replace(/%2F/g, "/"),
   );
   if (!searchUrl) return null;

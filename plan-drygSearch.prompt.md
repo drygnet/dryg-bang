@@ -4,11 +4,11 @@ Transform the unduck project into "Dryg Search" running on search.dryg.net, addi
 
 ### Steps
 
-1. **Remove analytics and rebrand HTML** in [index.html](index.html): Delete Plausible script (lines 25-29), change `<title>` to "Dryg Search", update meta description.
+1. ✅ **Remove analytics and rebrand HTML** in [index.html](index.html): Delete Plausible script (lines 25-29), change `<title>` to "Dryg Search", update meta description.
 
-2. **Rebrand landing page** in [src/main.ts](src/main.ts): Update title to "Dryg Search", URL to `search.dryg.net?q=%s`, remove t3.chat/theo footer links, add "Settings" button that opens modal.
+2. ✅ **Rebrand landing page** in [src/main.ts](src/main.ts): Update title to "Dryg Search", URL to `search.dryg.net?q=%s`, remove t3.chat/theo footer links, add "Settings" button that opens modal.
 
-3. **Add storage layer** in [src/main.ts](src/main.ts): Create helpers for `dryg-default-bang` and `dryg-custom-bangs` (array of `{t, u, s?, d?}`), modify `getBangredirectUrl` to check custom bangs first before built-ins.
+3. ✅ **Add storage layer** in [src/main.ts](src/main.ts): Create helpers for `dryg-default-bang` and `dryg-custom-bangs` (array of `{t, u, s?, d?}`), modify `getBangredirectUrl` to check custom bangs first before built-ins.
 
 4. **Build settings modal UI** in [src/main.ts](src/main.ts): Modal with backdrop on desktop, fullscreen slide-up on mobile. Contains: default search engine dropdown + custom bangs manager. Use existing `bangs.find()` pattern to check for conflicts and show warning (e.g. "Overrides: Google Search") when adding/editing.
 
