@@ -194,6 +194,11 @@ textarea {
   color: #333;
 }
 
+.footer-separator {
+  margin: 0 8px;
+  color: #999;
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     color: #ddd;
@@ -226,6 +231,10 @@ textarea {
 
   .footer a:hover {
     color: #ccc;
+  }
+
+  .footer-separator {
+    color: #666;
   }
 
   .url-input {

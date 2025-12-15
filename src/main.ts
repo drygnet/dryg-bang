@@ -79,14 +79,12 @@ function noSearchDefaultPageRender() {
             <img src="/clipboard.svg" alt="Copy" />
           </button>
         </div>
-        <p class="feature-text">💡 Add <strong>custom bangs</strong> for enterprise apps, internal tools, or self-hosted services in Settings.</p>
-        <button class="settings-button" id="open-settings">
-          <img src="/settings.svg" alt="Settings" />
-          Settings
-        </button>
+        <p class="feature-text">💡 Add custom bangs for enterprise apps, internal tools, or self-hosted services in <a href="#" id="open-settings">settings</a>.</p>
       </div>
       <footer class="footer">
         <a href="https://github.com/jblb/dryg-bang" target="_blank">github</a>
+        <span class="footer-separator">·</span>
+        <a href="#" id="open-settings-footer">settings</a>
       </footer>
     </div>
   `;
@@ -104,9 +102,17 @@ function noSearchDefaultPageRender() {
     }, 2000);
   });
 
-  // Settings button
-  const settingsButton = app.querySelector<HTMLButtonElement>("#open-settings")!;
-  settingsButton.addEventListener("click", openSettingsModal);
+  // Settings links
+  const settingsLink = app.querySelector<HTMLAnchorElement>("#open-settings")!;
+  const settingsFooterLink = app.querySelector<HTMLAnchorElement>("#open-settings-footer")!;
+  
+  const handleSettingsClick = (e: Event) => {
+    e.preventDefault();
+    openSettingsModal();
+  };
+  
+  settingsLink.addEventListener("click", handleSettingsClick);
+  settingsFooterLink.addEventListener("click", handleSettingsClick);
 }
 
 // Popular search engines for the default bang dropdown
