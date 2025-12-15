@@ -379,18 +379,34 @@ textarea {
   max-width: 300px;
 }
 
+.custom-bang-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.custom-bang-edit,
 .custom-bang-delete {
-  font-size: 20px;
+  font-size: 18px;
   color: #999;
   background: none;
   border: none;
   cursor: pointer;
   padding: 4px 8px;
   line-height: 1;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.custom-bang-edit:hover {
+  color: #1976d2;
+  background: rgba(25, 118, 210, 0.1);
 }
 
 .custom-bang-delete:hover {
   color: #e53935;
+  background: rgba(229, 57, 53, 0.1);
 }
 
 .add-bang-form {
@@ -433,7 +449,34 @@ textarea {
   display: none;
 }
 
+.form-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: 10px 16px;
+  background: #e0e0e0;
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #d0d0d0;
+}
+
+.btn-secondary.hidden {
+  display: none;
+}
+
 .btn-primary {
+  flex: 1;
   width: 100%;
   padding: 10px 16px;
   background: #1a1a1a;
@@ -552,5 +595,24 @@ textarea {
 
   .btn-primary:hover {
     background: #eee;
+  }
+
+  .btn-secondary {
+    background: #333;
+    color: #ddd;
+  }
+
+  .btn-secondary:hover {
+    background: #444;
+  }
+
+  .custom-bang-edit:hover {
+    color: #64b5f6;
+    background: rgba(100, 181, 246, 0.15);
+  }
+
+  .custom-bang-delete:hover {
+    color: #ef5350;
+    background: rgba(239, 83, 80, 0.15);
   }
 }

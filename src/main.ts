@@ -162,13 +162,17 @@ function openSettingsModal() {
                     <strong>!${b.t}</strong>${b.s ? ` <span class="custom-bang-name">— ${b.s}</span>` : ''}
                     <span class="custom-bang-url">${b.u}</span>
                   </div>
-                  <button class="custom-bang-delete" data-trigger="${b.t}" aria-label="Delete">×</button>
+                  <div class="custom-bang-actions">
+                    <button class="custom-bang-edit" data-trigger="${b.t}" aria-label="Edit">✎</button>
+                    <button class="custom-bang-delete" data-trigger="${b.t}" aria-label="Delete">×</button>
+                  </div>
                 </div>
               `).join('')}
           </div>
 
-          <div class="add-bang-form">
-            <h4>Add New Bang</h4>
+          <div class="add-bang-form" id="bang-form">
+            <h4 id="bang-form-title">Add New Bang</h4>
+            <input type="hidden" id="edit-original-trigger" value="" />
             <div class="form-row">
               <label for="new-bang-trigger">Trigger</label>
               <input type="text" id="new-bang-trigger" class="settings-input" placeholder="e.g., mysite" />
@@ -186,7 +190,10 @@ function openSettingsModal() {
               <input type="text" id="new-bang-domain" class="settings-input" placeholder="example.com" />
             </div>
             <div id="bang-conflict-warning" class="conflict-warning hidden"></div>
-            <button id="add-bang-btn" class="btn-primary">Add Bang</button>
+            <div class="form-buttons">
+              <button id="cancel-edit-btn" class="btn-secondary hidden">Cancel</button>
+              <button id="add-bang-btn" class="btn-primary">Add Bang</button>
+            </div>
           </div>
         </section>
       </div>
@@ -234,13 +241,57 @@ function openSettingsModal() {
     });
   });
 
-  // Add new bang handler
+  // Add/Edit bang form elements
+  const formTitle = backdrop.querySelector<HTMLHeadingElement>("#bang-form-title")!;
+  const originalTriggerInput = backdrop.querySelector<HTMLInputElement>("#edit-original-trigger")!;
   const triggerInput = backdrop.querySelector<HTMLInputElement>("#new-bang-trigger")!;
   const nameInput = backdrop.querySelector<HTMLInputElement>("#new-bang-name")!;
   const urlInput = backdrop.querySelector<HTMLInputElement>("#new-bang-url")!;
   const domainInput = backdrop.querySelector<HTMLInputElement>("#new-bang-domain")!;
   const conflictWarning = backdrop.querySelector<HTMLDivElement>("#bang-conflict-warning")!;
   const addBtn = backdrop.querySelector<HTMLButtonElement>("#add-bang-btn")!;
+  const cancelBtn = backdrop.querySelector<HTMLButtonElement>("#cancel-edit-btn")!;
+
+  // Reset form to add mode
+  function resetForm() {
+    formTitle.textContent = "Add New Bang";
+    originalTriggerInput.value = "";
+    triggerInput.value = "";
+    triggerInput.disabled = false;
+    nameInput.value = "";
+    urlInput.value = "";
+    domainInput.value = "";
+    addBtn.textContent = "Add Bang";
+    cancelBtn.classList.add("hidden");
+    conflictWarning.classList.add("hidden");
+  }
+
+  // Edit custom bang handlers
+  backdrop.querySelectorAll<HTMLButtonElement>(".custom-bang-edit").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const trigger = btn.dataset.trigger!;
+      const bang = customBangs.find(b => b.t === trigger);
+      if (!bang) return;
+
+      // Switch to edit mode
+      formTitle.textContent = "Edit Bang";
+      originalTriggerInput.value = bang.t;
+      triggerInput.value = bang.t;
+      triggerInput.disabled = true; // Can't change trigger when editing
+      nameInput.value = bang.s ?? "";
+      urlInput.value = bang.u;
+      domainInput.value = bang.d ?? "";
+      addBtn.textContent = "Save Changes";
+      cancelBtn.classList.remove("hidden");
+      conflictWarning.classList.add("hidden");
+
+      // Scroll form into view
+      backdrop.querySelector("#bang-form")?.scrollIntoView({ behavior: "smooth" });
+    });
+  });
+
+  // Cancel edit handler
+  cancelBtn.addEventListener("click", resetForm);
 
   // Check for conflicts when typing trigger
   triggerInput.addEventListener("input", () => {
@@ -255,7 +306,8 @@ function openSettingsModal() {
   });
 
   addBtn.addEventListener("click", () => {
-    const trigger = triggerInput.value.trim().toLowerCase();
+    const isEditMode = originalTriggerInput.value !== "";
+    const trigger = isEditMode ? originalTriggerInput.value : triggerInput.value.trim().toLowerCase();
     const name = nameInput.value.trim();
     const url = urlInput.value.trim();
     const domain = domainInput.value.trim();
