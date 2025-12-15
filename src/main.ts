@@ -82,7 +82,7 @@ function noSearchDefaultPageRender() {
         <p class="feature-text">💡 Add custom bangs for enterprise apps, internal tools, or self-hosted services in <a href="#" id="open-settings">settings</a>.</p>
       </div>
       <footer class="footer">
-        <a href="https://github.com/jblb/dryg-bang" target="_blank">github</a>
+        <a href="https://github.com/drygnet/dryg-bang" target="_blank">github</a>
         <span class="footer-separator">·</span>
         <a href="#" id="open-settings-footer">settings</a>
       </footer>
