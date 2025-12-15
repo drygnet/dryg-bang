@@ -2,11 +2,17 @@ import { bangs } from "./bang";
 import "./global.css";
 
 // Types
+interface IconData {
+  light: string;  // Light theme icon URL
+  dark: string;   // Dark theme icon URL
+}
+
 interface CustomBang {
   t: string;  // trigger
   u: string;  // URL template with {{{s}}}
   s?: string; // service name
   d?: string; // domain for empty queries
+  icon?: string | IconData; // svgl.app icon - string (legacy) or object with light/dark URLs
 }
 
 // Storage keys
@@ -37,6 +43,21 @@ function applyTheme(theme: Theme): void {
 
 // Apply theme on load
 applyTheme(getTheme());
+
+// Helper to get the correct icon URL based on current theme
+function getIconUrl(icon: string | IconData | undefined): string | null {
+  if (!icon) return null;
+  
+  if (typeof icon === 'string') {
+    // Legacy format - just a filename
+    return `https://svgl.app/library/${icon}.svg`;
+  }
+  
+  // New format with light/dark variants
+  const isDarkMode = document.documentElement.classList.contains('dark') || 
+    (getTheme() === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  return isDarkMode ? icon.dark : icon.light;
+}
 
 // Storage helpers
 function getDefaultBangTrigger(): string {
@@ -154,12 +175,17 @@ function noSearchDefaultPageRender() {
       return;
     }
 
-    dropdown.innerHTML = matches.map((b, i) => `
-      <div class="autocomplete-item ${i === selectedIndex ? 'selected' : ''}" data-trigger="${b.t}">
-        <span class="autocomplete-bang">!${b.t}</span>
-        ${b.s ? `<span class="autocomplete-name">${b.s}</span>` : ''}
-      </div>
-    `).join('');
+    dropdown.innerHTML = matches.map((b, i) => {
+      const iconUrl = getIconUrl(b.icon);
+      const iconHtml = iconUrl ? `<img src="${iconUrl}" alt="" class="autocomplete-icon" />` : '';
+      return `
+        <div class="autocomplete-item ${i === selectedIndex ? 'selected' : ''}" data-trigger="${b.t}">
+          ${iconHtml}
+          <span class="autocomplete-bang">!${b.t}</span>
+          ${b.s ? `<span class="autocomplete-name">${b.s}</span>` : ''}
+        </div>
+      `;
+    }).join('');
 
     dropdown.classList.remove("hidden");
 
@@ -379,18 +405,27 @@ function openSettingsModal() {
           
           <div id="custom-bangs-list" class="custom-bangs-list">
             ${customBangs.length === 0 ? '<p class="empty-state">No custom bangs yet.</p>' : 
-              customBangs.map(b => `
-                <div class="custom-bang-item" data-trigger="${b.t}">
-                  <div class="custom-bang-info">
-                    <strong>!${b.t}</strong>${b.s ? ` <span class="custom-bang-name">— ${b.s}</span>` : ''}
-                    <span class="custom-bang-url">${b.u}</span>
+              customBangs.map(b => {
+                const iconUrl = getIconUrl(b.icon);
+                const iconHtml = iconUrl ? `<img src="${iconUrl}" alt="" class="custom-bang-icon" />` : '';
+                return `
+                  <div class="custom-bang-item" data-trigger="${b.t}">
+                    <div class="custom-bang-info">
+                      ${iconHtml}
+                      <div class="custom-bang-details">
+                        <div class="custom-bang-header">
+                          <strong>!${b.t}</strong>${b.s ? ` <span class="custom-bang-name">— ${b.s}</span>` : ''}
+                        </div>
+                        <span class="custom-bang-url">${b.u}</span>
+                      </div>
+                    </div>
+                    <div class="custom-bang-actions">
+                      <button class="custom-bang-edit" data-trigger="${b.t}" aria-label="Edit">✎</button>
+                      <button class="custom-bang-delete" data-trigger="${b.t}" aria-label="Delete">×</button>
+                    </div>
                   </div>
-                  <div class="custom-bang-actions">
-                    <button class="custom-bang-edit" data-trigger="${b.t}" aria-label="Edit">✎</button>
-                    <button class="custom-bang-delete" data-trigger="${b.t}" aria-label="Delete">×</button>
-                  </div>
-                </div>
-              `).join('')}
+                `;
+              }).join('')}
           </div>
 
           <div class="add-bang-form" id="bang-form">
@@ -411,6 +446,13 @@ function openSettingsModal() {
             <div class="form-row">
               <label for="new-bang-domain">Domain (optional)</label>
               <input type="text" id="new-bang-domain" class="settings-input" placeholder="example.com" />
+            </div>
+            <div class="form-row">
+              <label for="new-bang-icon">Icon (optional)</label>
+              <div class="icon-input-container">
+                <input type="text" id="new-bang-icon" class="settings-input" placeholder="e.g., github (from svgl.app)" autocomplete="off" />
+                <div id="icon-autocomplete" class="icon-autocomplete hidden"></div>
+              </div>
             </div>
             <div id="bang-conflict-warning" class="conflict-warning hidden"></div>
             <div class="form-buttons">
@@ -491,9 +533,18 @@ function openSettingsModal() {
             <strong>!${b.t}</strong>
             <span class="favorites-result-name">${b.s}</span>
           </div>
-          <button class="favorites-add-btn" data-trigger="${b.t}" ${isAdded ? 'disabled' : ''}>
-            ${isAdded ? '✓' : '+'}
-          </button>
+          <div class="favorites-result-actions">
+            <input 
+              type="text" 
+              class="favorites-icon-input" 
+              data-trigger="${b.t}" 
+              placeholder="icon"
+              ${isAdded ? 'disabled' : ''}
+            />
+            <button class="favorites-add-btn" data-trigger="${b.t}" ${isAdded ? 'disabled' : ''}>
+              ${isAdded ? '✓' : '+'}
+            </button>
+          </div>
         </div>
       `;
     }).join('');
@@ -505,12 +556,15 @@ function openSettingsModal() {
       btn.addEventListener("click", () => {
         const trigger = btn.dataset.trigger!;
         const bang = bangs.find(b => b.t === trigger);
+        const iconInput = favoritesResults.querySelector<HTMLInputElement>(`.favorites-icon-input[data-trigger="${trigger}"]`);
+        const iconName = iconInput?.value.trim().toLowerCase() || undefined;
         if (bang) {
           addCustomBang({
             t: bang.t,
             u: bang.u,
             s: bang.s,
             d: bang.d,
+            icon: iconName,
           });
           // Re-render modal
           closeModal();
@@ -538,6 +592,7 @@ function openSettingsModal() {
   const nameInput = backdrop.querySelector<HTMLInputElement>("#new-bang-name")!;
   const urlInput = backdrop.querySelector<HTMLInputElement>("#new-bang-url")!;
   const domainInput = backdrop.querySelector<HTMLInputElement>("#new-bang-domain")!;
+  const iconInput = backdrop.querySelector<HTMLInputElement>("#new-bang-icon")!;
   const conflictWarning = backdrop.querySelector<HTMLDivElement>("#bang-conflict-warning")!;
   const addBtn = backdrop.querySelector<HTMLButtonElement>("#add-bang-btn")!;
   const cancelBtn = backdrop.querySelector<HTMLButtonElement>("#cancel-edit-btn")!;
@@ -551,6 +606,8 @@ function openSettingsModal() {
     nameInput.value = "";
     urlInput.value = "";
     domainInput.value = "";
+    iconInput.value = "";
+    iconInput.dataset.iconData = "";
     addBtn.textContent = "Add Bang";
     cancelBtn.classList.add("hidden");
     conflictWarning.classList.add("hidden");
@@ -571,6 +628,21 @@ function openSettingsModal() {
       nameInput.value = bang.s ?? "";
       urlInput.value = bang.u;
       domainInput.value = bang.d ?? "";
+      // Handle both legacy string format and new IconData format
+      if (bang.icon) {
+        if (typeof bang.icon === 'string') {
+          iconInput.value = bang.icon;
+          iconInput.dataset.iconData = '';
+        } else {
+          // Display light URL filename for reference
+          const displayName = bang.icon.light.split('/').pop()?.replace('.svg', '') ?? '';
+          iconInput.value = displayName;
+          iconInput.dataset.iconData = JSON.stringify(bang.icon);
+        }
+      } else {
+        iconInput.value = '';
+        iconInput.dataset.iconData = '';
+      }
       addBtn.textContent = "Save Changes";
       cancelBtn.classList.remove("hidden");
       conflictWarning.classList.add("hidden");
@@ -582,6 +654,93 @@ function openSettingsModal() {
 
   // Cancel edit handler
   cancelBtn.addEventListener("click", resetForm);
+
+  // Icon autocomplete
+  const iconAutocomplete = backdrop.querySelector<HTMLDivElement>("#icon-autocomplete")!;
+  let iconSearchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  iconInput.addEventListener("input", () => {
+    const query = iconInput.value.trim().toLowerCase();
+    
+    // Clear previous timeout
+    if (iconSearchTimeout) {
+      clearTimeout(iconSearchTimeout);
+    }
+
+    if (query.length < 3) {
+      iconAutocomplete.classList.add("hidden");
+      return;
+    }
+
+    // Debounce API call
+    iconSearchTimeout = setTimeout(async () => {
+      try {
+        const response = await fetch(`https://api.svgl.app/?search=${encodeURIComponent(query)}`);
+        const results = await response.json();
+
+        if (!Array.isArray(results) || results.length === 0) {
+          iconAutocomplete.innerHTML = '<div class="icon-autocomplete-empty">No icons found</div>';
+          iconAutocomplete.classList.remove("hidden");
+          return;
+        }
+
+        iconAutocomplete.innerHTML = results.slice(0, 8).map((icon: { id: number; title: string; route: string | { light: string; dark: string } }) => {
+          // route can be a string or an object with light/dark variants
+          const isDarkMode = document.documentElement.classList.contains('dark') || 
+            (getTheme() === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          
+          let lightUrl: string;
+          let darkUrl: string;
+          let displayFilename: string;
+          
+          if (typeof icon.route === 'string') {
+            lightUrl = icon.route;
+            darkUrl = icon.route;
+            displayFilename = icon.route.split('/').pop()?.replace('.svg', '') ?? '';
+          } else {
+            lightUrl = icon.route.light;
+            darkUrl = icon.route.dark;
+            displayFilename = icon.route.light.split('/').pop()?.replace('.svg', '') ?? '';
+          }
+          
+          // Show preview based on current theme
+          const previewUrl = isDarkMode ? darkUrl : lightUrl;
+          // Store both URLs as a JSON string for later use
+          const iconData = JSON.stringify({ light: lightUrl, dark: darkUrl });
+          
+          return `
+            <div class="icon-autocomplete-item" data-value='${iconData}' data-url="${previewUrl}">
+              <img src="${previewUrl}" alt="${icon.title}" class="icon-autocomplete-preview" />
+              <span class="icon-autocomplete-name">${icon.title}</span>
+              <span class="icon-autocomplete-filename">${displayFilename}</span>
+            </div>
+          `;
+        }).join('');
+
+        iconAutocomplete.classList.remove("hidden");
+
+        // Add click handlers
+        iconAutocomplete.querySelectorAll<HTMLDivElement>(".icon-autocomplete-item").forEach(item => {
+          item.addEventListener("click", () => {
+            // Store the JSON data in the input
+            iconInput.value = item.dataset.value ?? '';
+            iconInput.dataset.iconData = item.dataset.value ?? '';
+            iconAutocomplete.classList.add("hidden");
+          });
+        });
+      } catch (error) {
+        console.error('Failed to fetch icons:', error);
+        iconAutocomplete.classList.add("hidden");
+      }
+    }, 300);
+  });
+
+  // Hide icon autocomplete when clicking outside
+  backdrop.addEventListener("click", (e) => {
+    if (!iconInput.contains(e.target as Node) && !iconAutocomplete.contains(e.target as Node)) {
+      iconAutocomplete.classList.add("hidden");
+    }
+  });
 
   // Check for conflicts when typing trigger
   triggerInput.addEventListener("input", () => {
@@ -601,6 +760,21 @@ function openSettingsModal() {
     const name = nameInput.value.trim();
     const url = urlInput.value.trim();
     const domain = domainInput.value.trim();
+    
+    // Parse icon - check if we have IconData JSON or just a string
+    let icon: string | IconData | undefined;
+    const iconDataStr = iconInput.dataset.iconData;
+    const iconValue = iconInput.value.trim();
+    
+    if (iconDataStr) {
+      try {
+        icon = JSON.parse(iconDataStr) as IconData;
+      } catch {
+        icon = iconValue || undefined;
+      }
+    } else if (iconValue) {
+      icon = iconValue.toLowerCase();
+    }
 
     if (!trigger || !url) {
       alert("Please fill in both trigger and URL template.");
@@ -617,6 +791,7 @@ function openSettingsModal() {
       u: url,
       s: name || undefined,
       d: domain || undefined,
+      icon: icon,
     });
 
     // Re-render modal
