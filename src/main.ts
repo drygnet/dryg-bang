@@ -111,8 +111,9 @@ function noSearchDefaultPageRender() {
   const customBangs = getCustomBangs();
   const defaultTrigger = getDefaultBangTrigger();
   
-  // Find the default/initial bang to display
-  const initialBang = customBangs.length > 0 ? customBangs[0] : findBang(defaultTrigger);
+  // Find the default/initial bang to display - prefer the user's default bang if it exists in favorites
+  const defaultBangMatch = customBangs.find(b => b.t === defaultTrigger);
+  const initialBang = defaultBangMatch ?? (customBangs.length > 0 ? customBangs[0] : findBang(defaultTrigger));
   const initialIconUrl = initialBang ? getIconUrl((initialBang as CustomBang).icon) : null;
   
   app.innerHTML = `
