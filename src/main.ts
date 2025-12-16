@@ -561,8 +561,11 @@ function openSettingsModal() {
 
   document.body.appendChild(backdrop);
 
-  // Close modal handlers
-  const closeModal = () => backdrop.remove();
+  // Close modal handlers - refresh main page to show updated favorites
+  const closeModal = () => {
+    backdrop.remove();
+    noSearchDefaultPageRender();
+  };
   backdrop.querySelector(".modal-close")!.addEventListener("click", closeModal);
   backdrop.addEventListener("click", (e) => {
     if (e.target === backdrop) closeModal();
