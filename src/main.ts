@@ -11,7 +11,7 @@ interface CustomBang {
   t: string;  // trigger
   u: string;  // URL template with {{{s}}}
   s?: string; // service name
-  d?: string; // domain for empty queries
+  d?: string; // domain or URL for empty queries (e.g., "github.com" or "https://github.com/myOrg")
   icon?: string | IconData; // svgl.app icon - string (legacy) or object with light/dark URLs
 }
 
@@ -539,8 +539,8 @@ function openSettingsModal() {
               <input type="text" id="new-bang-url" class="settings-input" placeholder="https://example.com/search?q={{{s}}}" />
             </div>
             <div class="form-row">
-              <label for="new-bang-domain">Domain (optional)</label>
-              <input type="text" id="new-bang-domain" class="settings-input" placeholder="example.com" />
+              <label for="new-bang-domain">Home URL (optional)</label>
+              <input type="text" id="new-bang-domain" class="settings-input" placeholder="e.g., github.com or https://github.com/myOrg" />
             </div>
             <div class="form-row">
               <label for="new-bang-icon">Icon (optional)</label>
@@ -969,8 +969,11 @@ function getBangredirectUrl() {
   const cleanQuery = query.replace(/!\S+\s*/i, "").trim();
 
   // If the query is just `!gh`, use domain instead of search URL
-  if (cleanQuery === "")
-    return selectedBang?.d ? `https://${selectedBang.d}` : null;
+  if (cleanQuery === "") {
+    if (!selectedBang?.d) return null;
+    // Support both full URLs (starting with http) and plain domains
+    return selectedBang.d.startsWith("http") ? selectedBang.d : `https://${selectedBang.d}`;
+  }
 
   // Format of the url is:
   // https://www.google.com/search?q={{{s}}}
