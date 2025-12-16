@@ -116,6 +116,11 @@ function noSearchDefaultPageRender() {
   const initialBang = defaultBangMatch ?? (customBangs.length > 0 ? customBangs[0] : findBang(defaultTrigger));
   const initialIconUrl = initialBang ? getIconUrl((initialBang as CustomBang).icon) : null;
   
+  // Get first 7 favorites with both home URL and icon for shortcuts
+  const shortcutBangs = customBangs
+    .filter(b => b.d && b.icon)
+    .slice(0, 7);
+  
   app.innerHTML = `
     <div class="landing-container">
       <main class="landing-main">
@@ -145,6 +150,17 @@ function noSearchDefaultPageRender() {
           />
           <div class="autocomplete-dropdown hidden"></div>
         </div>
+        ${shortcutBangs.length > 0 ? `
+        <div class="shortcuts-row">
+          ${shortcutBangs.map(b => {
+            const iconUrl = getIconUrl(b.icon);
+            const homeUrl = b.d!.startsWith('http') ? b.d : `https://${b.d}`;
+            return `<a href="${homeUrl}" class="shortcut-link" title="${b.s ?? b.t}">
+              <img src="${iconUrl}" alt="${b.s ?? b.t}" class="shortcut-icon" />
+            </a>`;
+          }).join('')}
+        </div>
+        ` : ''}
       </main>
       <footer class="footer">
         <a href="https://github.com/drygnet/dryg-bang" target="_blank">github</a>

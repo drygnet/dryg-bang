@@ -401,6 +401,36 @@ textarea {
   flex-shrink: 0;
 }
 
+/* Shortcuts row - favorite links with home URLs */
+.shortcuts-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.shortcut-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #f5f5f5;
+  transition: all 0.15s;
+}
+
+.shortcut-link:hover {
+  background: #e8e8e8;
+  transform: scale(1.08);
+}
+
+.shortcut-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
 /* About modal content */
 .about-content {
   text-align: center;
@@ -516,6 +546,14 @@ textarea {
 
   :root:not(.light) .autocomplete-name {
     color: #999;
+  }
+
+  :root:not(.light) .shortcut-link {
+    background: #2a2a2a;
+  }
+
+  :root:not(.light) .shortcut-link:hover {
+    background: #3a3a3a;
   }
 
   :root:not(.light) .url-input {
@@ -657,6 +695,14 @@ textarea {
 
 :root.dark .autocomplete-name {
   color: #999;
+}
+
+:root.dark .shortcut-link {
+  background: #2a2a2a;
+}
+
+:root.dark .shortcut-link:hover {
+  background: #3a3a3a;
 }
 
 :root.dark .url-input {
