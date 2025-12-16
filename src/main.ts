@@ -108,14 +108,38 @@ function getBuiltInBangConflict(trigger: string): typeof bangs[number] | undefin
 
 function noSearchDefaultPageRender() {
   const app = document.querySelector<HTMLDivElement>("#app")!;
+  const customBangs = getCustomBangs();
+  const defaultTrigger = getDefaultBangTrigger();
+  
+  // Find the default/initial bang to display
+  const initialBang = customBangs.length > 0 ? customBangs[0] : findBang(defaultTrigger);
+  const initialIconUrl = initialBang ? getIconUrl((initialBang as CustomBang).icon) : null;
+  
   app.innerHTML = `
     <div class="landing-container">
       <main class="landing-main">
         <div class="search-container">
+          ${customBangs.length > 0 ? `
+          <button class="bang-prefix-btn" id="bang-prefix-btn" data-trigger="${initialBang?.t ?? ''}" title="!${initialBang?.t ?? defaultTrigger}">
+            ${initialIconUrl ? `<img src="${initialIconUrl}" alt="!${initialBang?.t ?? ''}" class="bang-prefix-icon" />` : `<span class="bang-prefix-text">!${initialBang?.t ?? defaultTrigger}</span>`}
+          </button>
+          <div class="bang-selector-dropdown hidden" id="bang-selector-dropdown">
+            ${customBangs.map(b => {
+              const iconUrl = getIconUrl(b.icon);
+              return `
+                <div class="bang-selector-item" data-trigger="${b.t}">
+                  ${iconUrl ? `<img src="${iconUrl}" alt="" class="bang-selector-item-icon" />` : '<span class="bang-selector-item-icon-placeholder"></span>'}
+                  <span class="bang-selector-item-trigger">!${b.t}</span>
+                  ${b.s ? `<span class="bang-selector-item-name">${b.s}</span>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+          ` : ''}
           <input 
             type="text" 
-            class="search-input"
-            placeholder="Search or type a !bang..."
+            class="search-input ${customBangs.length > 0 ? 'has-prefix' : ''}"
+            placeholder="Search..."
             autofocus
           />
           <div class="autocomplete-dropdown hidden"></div>
@@ -145,6 +169,65 @@ function noSearchDefaultPageRender() {
     openAboutModal();
   });
 
+  // Bang selector dropdown (if favorites exist)
+  const bangPrefixBtn = app.querySelector<HTMLButtonElement>("#bang-prefix-btn");
+  const bangSelectorDropdown = app.querySelector<HTMLDivElement>("#bang-selector-dropdown");
+  let selectedBangTrigger = bangPrefixBtn?.dataset.trigger ?? '';
+
+  if (bangPrefixBtn && bangSelectorDropdown) {
+    // Toggle dropdown
+    bangPrefixBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      bangSelectorDropdown.classList.toggle("hidden");
+    });
+
+    // Select a bang from dropdown
+    bangSelectorDropdown.querySelectorAll<HTMLDivElement>(".bang-selector-item").forEach(item => {
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const trigger = item.dataset.trigger!;
+        selectBangFromDropdown(trigger);
+        bangSelectorDropdown.classList.add("hidden");
+      });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", () => {
+      bangSelectorDropdown.classList.add("hidden");
+    });
+  }
+
+  function selectBangFromDropdown(trigger: string) {
+    if (!bangPrefixBtn) return;
+    
+    const bang = customBangs.find(b => b.t === trigger);
+    if (!bang) return;
+
+    selectedBangTrigger = trigger;
+    bangPrefixBtn.dataset.trigger = trigger;
+    bangPrefixBtn.title = `!${trigger}`;
+    
+    const iconUrl = getIconUrl(bang.icon);
+    bangPrefixBtn.innerHTML = iconUrl 
+      ? `<img src="${iconUrl}" alt="!${trigger}" class="bang-prefix-icon" />`
+      : `<span class="bang-prefix-text">!${trigger}</span>`;
+
+    // Update search input - remove any existing bang
+    const currentValue = searchInput.value;
+    const cleanedValue = currentValue.replace(/!\S+\s*/gi, '').trim();
+    searchInput.value = cleanedValue;
+    searchInput.focus();
+  }
+
+  function updateBangSelectorFromInput(inputTrigger: string) {
+    if (!bangPrefixBtn || !bangSelectorDropdown) return;
+    
+    const matchingBang = customBangs.find(b => b.t.toLowerCase() === inputTrigger.toLowerCase());
+    if (matchingBang && matchingBang.t !== selectedBangTrigger) {
+      selectBangFromDropdown(matchingBang.t);
+    }
+  }
+
   // Search input with autocomplete
   const searchInput = app.querySelector<HTMLInputElement>(".search-input")!;
   const dropdown = app.querySelector<HTMLDivElement>(".autocomplete-dropdown")!;
@@ -152,16 +235,23 @@ function noSearchDefaultPageRender() {
 
   function updateAutocomplete() {
     const value = searchInput.value;
-    const bangMatch = value.match(/!(\S*)$/i);
+    const bangMatch = value.match(/!(\S+)/i);
     
-    if (!bangMatch) {
+    // Check if typed bang matches a favorite and update selector
+    if (bangMatch && bangMatch[1]) {
+      const typedTrigger = bangMatch[1].toLowerCase();
+      updateBangSelectorFromInput(typedTrigger);
+    }
+    
+    // Only show autocomplete for partial bangs at end of input
+    const partialMatch = value.match(/!(\S*)$/i);
+    if (!partialMatch) {
       dropdown.classList.add("hidden");
       selectedIndex = -1;
       return;
     }
 
-    const partial = bangMatch[1].toLowerCase();
-    const customBangs = getCustomBangs();
+    const partial = partialMatch[1].toLowerCase();
     
     // Filter custom bangs that match the partial
     const matches = customBangs.filter(b => 
@@ -240,8 +330,12 @@ function noSearchDefaultPageRender() {
     }
 
     if (e.key === "Enter") {
-      const query = searchInput.value.trim();
+      let query = searchInput.value.trim();
       if (query) {
+        // If user has a bang prefix and no bang in query, prepend the selected bang
+        if (bangPrefixBtn && selectedBangTrigger && !query.match(/!\S+/i)) {
+          query = `!${selectedBangTrigger} ${query}`;
+        }
         window.location.href = `?q=${encodeURIComponent(query)}`;
       }
     }

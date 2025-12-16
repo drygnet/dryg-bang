@@ -227,6 +227,8 @@ textarea {
 .search-container {
   width: 100%;
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .search-input {
@@ -239,6 +241,10 @@ textarea {
   transition: all 0.2s;
 }
 
+.search-input.has-prefix {
+  padding-left: 56px;
+}
+
 .search-input:focus {
   outline: none;
   border-color: #888;
@@ -248,6 +254,101 @@ textarea {
 
 .search-input::placeholder {
   color: #999;
+}
+
+/* Bang prefix button (inside search box) */
+.bang-prefix-btn {
+  position: absolute;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 6px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+  z-index: 10;
+}
+
+.bang-prefix-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.bang-prefix-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.bang-prefix-text {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+}
+
+/* Bang selector dropdown */
+.bang-selector-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 200;
+  overflow: hidden;
+}
+
+.bang-selector-dropdown.hidden {
+  display: none;
+}
+
+.bang-selector-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.bang-selector-item:hover {
+  background: #f5f5f5;
+}
+
+.bang-selector-item-icon,
+.bang-selector-item-icon-placeholder {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.bang-selector-item-icon-placeholder {
+  background: #eee;
+  border-radius: 4px;
+}
+
+.bang-selector-item-trigger {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.bang-selector-item-name {
+  font-size: 13px;
+  color: #666;
+  margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
 /* Autocomplete dropdown */
@@ -368,6 +469,36 @@ textarea {
     color: #666;
   }
 
+  :root:not(.light) .bang-prefix-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  :root:not(.light) .bang-prefix-text {
+    color: #999;
+  }
+
+  :root:not(.light) .bang-selector-dropdown {
+    background: #1a1a1a;
+    border-color: #333;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  :root:not(.light) .bang-selector-item:hover {
+    background: #2a2a2a;
+  }
+
+  :root:not(.light) .bang-selector-item-trigger {
+    color: #ddd;
+  }
+
+  :root:not(.light) .bang-selector-item-name {
+    color: #888;
+  }
+
+  :root:not(.light) .bang-selector-item-icon-placeholder {
+    background: #333;
+  }
+
   :root:not(.light) .autocomplete-dropdown {
     background: #1a1a1a;
     border-color: #333;
@@ -477,6 +608,36 @@ textarea {
 
 :root.dark .search-input::placeholder {
   color: #666;
+}
+
+:root.dark .bang-prefix-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:root.dark .bang-prefix-text {
+  color: #999;
+}
+
+:root.dark .bang-selector-dropdown {
+  background: #1a1a1a;
+  border-color: #333;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+:root.dark .bang-selector-item:hover {
+  background: #2a2a2a;
+}
+
+:root.dark .bang-selector-item-trigger {
+  color: #ddd;
+}
+
+:root.dark .bang-selector-item-name {
+  color: #888;
+}
+
+:root.dark .bang-selector-item-icon-placeholder {
+  background: #333;
 }
 
 :root.dark .autocomplete-dropdown {
