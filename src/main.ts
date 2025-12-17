@@ -561,17 +561,8 @@ function openSettingsModal() {
             </div>
             <div class="form-row">
               <label for="new-bang-icon">Icon (optional)</label>
-              <div class="icon-quick-select">
-                ${localIcons.map(icon => {
-                  const iconUrl = typeof icon.route === 'string' ? icon.route : icon.route.light;
-                  return `
-                  <button type="button" class="icon-quick-btn" data-icon-id="${icon.id}" data-icon-route='${JSON.stringify(icon.route)}' title="${icon.title}">
-                    <img src="${iconUrl}" alt="${icon.title}" />
-                  </button>
-                `}).join('')}
-              </div>
               <div class="icon-input-container">
-                <input type="text" id="new-bang-icon" class="settings-input" placeholder="or search svgl.app..." autocomplete="off" />
+                <input type="text" id="new-bang-icon" class="settings-input" placeholder="Search icons..." autocomplete="off" />
                 <div id="icon-autocomplete" class="icon-autocomplete hidden"></div>
               </div>
             </div>
@@ -780,8 +771,6 @@ function openSettingsModal() {
     addBtn.textContent = "Add Bang";
     cancelBtn.classList.add("hidden");
     conflictWarning.classList.add("hidden");
-    // Clear icon quick-select buttons
-    backdrop.querySelectorAll(".icon-quick-btn").forEach(b => b.classList.remove("selected"));
   }
 
   // Edit custom bang handlers
@@ -800,9 +789,6 @@ function openSettingsModal() {
       urlInput.value = bang.u;
       domainInput.value = bang.d ?? "";
       
-      // Clear previous quick-select selection
-      backdrop.querySelectorAll(".icon-quick-btn").forEach(b => b.classList.remove("selected"));
-      
       // Handle both legacy string format and new IconData format
       if (bang.icon) {
         if (typeof bang.icon === 'string') {
@@ -818,9 +804,6 @@ function openSettingsModal() {
           if (matchingLocal) {
             iconInput.value = matchingLocal.title;
             iconInput.dataset.iconData = JSON.stringify(bang.icon);
-            // Highlight the matching quick-select button
-            const matchingBtn = backdrop.querySelector<HTMLButtonElement>(`.icon-quick-btn[data-icon-id="${matchingLocal.id}"]`);
-            matchingBtn?.classList.add("selected");
           } else {
             // Display light URL filename for reference
             const displayName = iconLight.split('/').pop()?.replace('.svg', '') ?? '';
@@ -844,26 +827,54 @@ function openSettingsModal() {
   // Cancel edit handler
   cancelBtn.addEventListener("click", resetForm);
 
-  // Icon quick-select buttons
-  backdrop.querySelectorAll<HTMLButtonElement>(".icon-quick-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const route = JSON.parse(btn.dataset.iconRoute!);
-      // Store as IconData format
-      const iconData = typeof route === 'string'
-        ? JSON.stringify({ light: route, dark: route })
-        : JSON.stringify(route);
-      iconInput.value = btn.title;
-      iconInput.dataset.iconData = iconData;
-      
-      // Highlight selected button
-      backdrop.querySelectorAll(".icon-quick-btn").forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
-    });
-  });
-
   // Icon autocomplete
-  const iconAutocomplete = backdrop.querySelector<HTMLDivElement>("#icon-autocomplete")!;
+  const iconAutocomplete = backdrop.querySelector<HTMLDivElement>("#icon-autocomplete")!
   let iconSearchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  function renderIconResults(icons: Array<{ title: string; route: string | { light: string; dark: string }; isLocal?: boolean }>) {
+    const isDarkMode = document.documentElement.classList.contains('dark') || 
+      (getTheme() === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    iconAutocomplete.innerHTML = icons.map(icon => {
+      let lightUrl: string;
+      let darkUrl: string;
+      let displayFilename: string;
+      
+      if (typeof icon.route === 'string') {
+        lightUrl = icon.route;
+        darkUrl = icon.route;
+        displayFilename = icon.route.split('/').pop()?.replace('.svg', '') ?? '';
+      } else {
+        lightUrl = icon.route.light;
+        darkUrl = icon.route.dark;
+        displayFilename = icon.route.light.split('/').pop()?.replace('.svg', '') ?? '';
+      }
+      
+      const previewUrl = isDarkMode ? darkUrl : lightUrl;
+      const iconData = JSON.stringify({ light: lightUrl, dark: darkUrl });
+      const localBadge = icon.isLocal ? '<span class="icon-autocomplete-local">local</span>' : '';
+      
+      return `
+        <div class="icon-autocomplete-item" data-value='${iconData}' data-title="${icon.title}">
+          <img src="${previewUrl}" alt="${icon.title}" class="icon-autocomplete-preview" />
+          <span class="icon-autocomplete-name">${icon.title}</span>
+          ${localBadge}
+          <span class="icon-autocomplete-filename">${displayFilename}</span>
+        </div>
+      `;
+    }).join('');
+
+    iconAutocomplete.classList.remove("hidden");
+
+    // Add click handlers
+    iconAutocomplete.querySelectorAll<HTMLDivElement>(".icon-autocomplete-item").forEach(item => {
+      item.addEventListener("click", () => {
+        iconInput.value = item.dataset.title ?? '';
+        iconInput.dataset.iconData = item.dataset.value ?? '';
+        iconAutocomplete.classList.add("hidden");
+      });
+    });
+  }
 
   iconInput.addEventListener("input", () => {
     const query = iconInput.value.trim().toLowerCase();
@@ -873,70 +884,51 @@ function openSettingsModal() {
       clearTimeout(iconSearchTimeout);
     }
 
-    if (query.length < 3) {
+    if (query.length < 2) {
       iconAutocomplete.classList.add("hidden");
       return;
     }
 
-    // Debounce API call
+    // Search local icons first (immediate)
+    const localMatches = localIcons.filter(icon => 
+      icon.title.toLowerCase().includes(query)
+    ).map(icon => ({ ...icon, isLocal: true }));
+
+    // Show local results immediately if any
+    if (localMatches.length > 0) {
+      renderIconResults(localMatches);
+    }
+
+    // Debounce API call for additional results
     iconSearchTimeout = setTimeout(async () => {
       try {
         const response = await fetch(`https://api.svgl.app/?search=${encodeURIComponent(query)}`);
-        const results = await response.json();
+        const apiResults = await response.json();
 
-        if (!Array.isArray(results) || results.length === 0) {
+        const apiIcons = Array.isArray(apiResults) ? apiResults.slice(0, 8).map((icon: { title: string; route: string | { light: string; dark: string } }) => ({
+          title: icon.title,
+          route: icon.route,
+          isLocal: false
+        })) : [];
+
+        // Combine local (first) and API results, remove duplicates by title
+        const seenTitles = new Set(localMatches.map(i => i.title.toLowerCase()));
+        const uniqueApiIcons = apiIcons.filter(i => !seenTitles.has(i.title.toLowerCase()));
+        const combined = [...localMatches, ...uniqueApiIcons].slice(0, 10);
+
+        if (combined.length === 0) {
           iconAutocomplete.innerHTML = '<div class="icon-autocomplete-empty">No icons found</div>';
           iconAutocomplete.classList.remove("hidden");
           return;
         }
 
-        iconAutocomplete.innerHTML = results.slice(0, 8).map((icon: { id: number; title: string; route: string | { light: string; dark: string } }) => {
-          // route can be a string or an object with light/dark variants
-          const isDarkMode = document.documentElement.classList.contains('dark') || 
-            (getTheme() === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          
-          let lightUrl: string;
-          let darkUrl: string;
-          let displayFilename: string;
-          
-          if (typeof icon.route === 'string') {
-            lightUrl = icon.route;
-            darkUrl = icon.route;
-            displayFilename = icon.route.split('/').pop()?.replace('.svg', '') ?? '';
-          } else {
-            lightUrl = icon.route.light;
-            darkUrl = icon.route.dark;
-            displayFilename = icon.route.light.split('/').pop()?.replace('.svg', '') ?? '';
-          }
-          
-          // Show preview based on current theme
-          const previewUrl = isDarkMode ? darkUrl : lightUrl;
-          // Store both URLs as a JSON string for later use
-          const iconData = JSON.stringify({ light: lightUrl, dark: darkUrl });
-          
-          return `
-            <div class="icon-autocomplete-item" data-value='${iconData}' data-url="${previewUrl}">
-              <img src="${previewUrl}" alt="${icon.title}" class="icon-autocomplete-preview" />
-              <span class="icon-autocomplete-name">${icon.title}</span>
-              <span class="icon-autocomplete-filename">${displayFilename}</span>
-            </div>
-          `;
-        }).join('');
-
-        iconAutocomplete.classList.remove("hidden");
-
-        // Add click handlers
-        iconAutocomplete.querySelectorAll<HTMLDivElement>(".icon-autocomplete-item").forEach(item => {
-          item.addEventListener("click", () => {
-            // Store the JSON data in the input
-            iconInput.value = item.dataset.value ?? '';
-            iconInput.dataset.iconData = item.dataset.value ?? '';
-            iconAutocomplete.classList.add("hidden");
-          });
-        });
+        renderIconResults(combined);
       } catch (error) {
         console.error('Failed to fetch icons:', error);
-        iconAutocomplete.classList.add("hidden");
+        // Keep showing local results if API fails
+        if (localMatches.length === 0) {
+          iconAutocomplete.classList.add("hidden");
+        }
       }
     }, 300);
   });
