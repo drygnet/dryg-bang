@@ -42,6 +42,14 @@ pnpm build    # TypeScript check + Vite build
 pnpm preview  # Preview production build
 ```
 
+**IMPORTANT for Copilot:** When Vite shows this output, the server IS running and ready - it is NOT waiting for input:
+```
+VITE v6.x.x  ready in XXX ms
+  ➜  Local:   http://localhost:5173/
+  ➜  press h + enter to show help
+```
+The dev server is active at the URL shown. Do NOT interpret this as the command being idle or waiting.
+
 ## Code Patterns
 
 ### Bang Data Structure

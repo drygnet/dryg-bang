@@ -38,6 +38,24 @@ All redirects happen client-side in your browser. Once loaded, the JavaScript is
 - ✅ PWA with offline support
 - ✅ Dark mode
 
+## Adding Local Icons
+
+The project includes some local SVG icons in `public/icons/` for quick selection when creating custom bangs. To add more:
+
+1. Download SVG icons from [worldvectorlogo.com](https://worldvectorlogo.com) or similar sites
+2. Place them in `public/icons/`
+3. Add an entry to `src/icons.ts` following the existing format:
+
+```typescript
+{
+  id: 3,
+  title: "Service Name",
+  category: "Software",
+  route: "/icons/service-name.svg",
+  url: "https://service-website.com"
+}
+```
+
 ## Development
 
 ```bash

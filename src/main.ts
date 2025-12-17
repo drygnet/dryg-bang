@@ -1,4 +1,5 @@
 import { bangs } from "./bang";
+import { localIcons } from "./icons";
 import "./global.css";
 
 // Types
@@ -560,8 +561,17 @@ function openSettingsModal() {
             </div>
             <div class="form-row">
               <label for="new-bang-icon">Icon (optional)</label>
+              <div class="icon-quick-select">
+                ${localIcons.map(icon => {
+                  const iconUrl = typeof icon.route === 'string' ? icon.route : icon.route.light;
+                  return `
+                  <button type="button" class="icon-quick-btn" data-icon-id="${icon.id}" data-icon-route='${JSON.stringify(icon.route)}' title="${icon.title}">
+                    <img src="${iconUrl}" alt="${icon.title}" />
+                  </button>
+                `}).join('')}
+              </div>
               <div class="icon-input-container">
-                <input type="text" id="new-bang-icon" class="settings-input" placeholder="e.g., github (from svgl.app)" autocomplete="off" />
+                <input type="text" id="new-bang-icon" class="settings-input" placeholder="or search svgl.app..." autocomplete="off" />
                 <div id="icon-autocomplete" class="icon-autocomplete hidden"></div>
               </div>
             </div>
@@ -770,6 +780,8 @@ function openSettingsModal() {
     addBtn.textContent = "Add Bang";
     cancelBtn.classList.add("hidden");
     conflictWarning.classList.add("hidden");
+    // Clear icon quick-select buttons
+    backdrop.querySelectorAll(".icon-quick-btn").forEach(b => b.classList.remove("selected"));
   }
 
   // Edit custom bang handlers
@@ -787,16 +799,34 @@ function openSettingsModal() {
       nameInput.value = bang.s ?? "";
       urlInput.value = bang.u;
       domainInput.value = bang.d ?? "";
+      
+      // Clear previous quick-select selection
+      backdrop.querySelectorAll(".icon-quick-btn").forEach(b => b.classList.remove("selected"));
+      
       // Handle both legacy string format and new IconData format
       if (bang.icon) {
         if (typeof bang.icon === 'string') {
           iconInput.value = bang.icon;
           iconInput.dataset.iconData = '';
         } else {
-          // Display light URL filename for reference
-          const displayName = bang.icon.light.split('/').pop()?.replace('.svg', '') ?? '';
-          iconInput.value = displayName;
-          iconInput.dataset.iconData = JSON.stringify(bang.icon);
+          const iconLight = bang.icon.light;
+          // Check if it matches a local icon
+          const matchingLocal = localIcons.find(h => {
+            const route = typeof h.route === 'string' ? h.route : h.route.light;
+            return route === iconLight;
+          });
+          if (matchingLocal) {
+            iconInput.value = matchingLocal.title;
+            iconInput.dataset.iconData = JSON.stringify(bang.icon);
+            // Highlight the matching quick-select button
+            const matchingBtn = backdrop.querySelector<HTMLButtonElement>(`.icon-quick-btn[data-icon-id="${matchingLocal.id}"]`);
+            matchingBtn?.classList.add("selected");
+          } else {
+            // Display light URL filename for reference
+            const displayName = iconLight.split('/').pop()?.replace('.svg', '') ?? '';
+            iconInput.value = displayName;
+            iconInput.dataset.iconData = JSON.stringify(bang.icon);
+          }
         }
       } else {
         iconInput.value = '';
@@ -813,6 +843,23 @@ function openSettingsModal() {
 
   // Cancel edit handler
   cancelBtn.addEventListener("click", resetForm);
+
+  // Icon quick-select buttons
+  backdrop.querySelectorAll<HTMLButtonElement>(".icon-quick-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const route = JSON.parse(btn.dataset.iconRoute!);
+      // Store as IconData format
+      const iconData = typeof route === 'string'
+        ? JSON.stringify({ light: route, dark: route })
+        : JSON.stringify(route);
+      iconInput.value = btn.title;
+      iconInput.dataset.iconData = iconData;
+      
+      // Highlight selected button
+      backdrop.querySelectorAll(".icon-quick-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+    });
+  });
 
   // Icon autocomplete
   const iconAutocomplete = backdrop.querySelector<HTMLDivElement>("#icon-autocomplete")!;
